@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Night reading desk — dark room, one amber accent (e-ink lamp). */
+:root {
+  color-scheme: only dark;
+  --background: oklch(0.16 0.01 260);
+  --foreground: oklch(0.92 0.01 80);
+  --card: oklch(0.19 0.01 260);
+  --card-foreground: oklch(0.92 0.01 80);
+  --popover: oklch(0.18 0.012 260);
+  --popover-foreground: oklch(0.92 0.01 80);
+  --primary: oklch(0.78 0.09 75);
+  --primary-foreground: oklch(0.18 0.02 75);
+  --secondary: oklch(0.24 0.012 260);
+  --secondary-foreground: oklch(0.88 0.01 80);
+  --muted: oklch(0.24 0.01 260);
+  --muted-foreground: oklch(0.68 0.015 260);
+  --accent: oklch(0.26 0.015 260);
+  --accent-foreground: oklch(0.94 0.01 80);
+  --destructive: oklch(0.62 0.18 25);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.78 0.09 75);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.14 0.01 260);
+  --sidebar-foreground: oklch(0.9 0.01 80);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+  --desk-glow: oklch(0.78 0.09 75 / 0.08);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --sidebar-primary: oklch(0.78 0.09 75);
+  --sidebar-primary-foreground: oklch(0.18 0.02 75);
+  --sidebar-accent: oklch(0.22 0.012 260);
+  --sidebar-accent-foreground: oklch(0.94 0.01 80);
+  --sidebar-ring: oklch(0.78 0.09 75);
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", ui-sans-serif, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    margin: 0;
+  }
+  ::selection {
+    background: oklch(0.78 0.09 75 / 0.35);
+    color: var(--foreground);
+  }
+}
+
+/* Kobo device chrome */
+.device-frame {
+  position: relative;
+  box-sizing: border-box;
+  background: #f4f1ea;
+  border: 10px solid #1a1a1a;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.06),
+    0 24px 48px oklch(0 0 0 / 0.45),
+    0 0 80px var(--desk-glow);
+  overflow: hidden;
+  transition: box-shadow 200ms var(--ease-out);
+}
+.device-frame.kindle {
+  border-width: 6px 6px 16px;
+  border-color: #222;
+  border-radius: 10px;
+}
+.device-frame.eink {
+  filter: grayscale(1) contrast(1.05);
+}
+.device-frame.dark-page {
+  background: #151515;
+}
+.device-frame #viewer,
+.device-frame #spine-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+.device-frame #spine-host {
+  display: none;
+  overflow: hidden;
+}
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}

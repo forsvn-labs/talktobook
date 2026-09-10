@@ -1,0 +1,9 @@
+.env
+!.env.example
+jobs/
+events.jsonl
+.playwright-mcp/
+__pycache__/
+*.pyc
+.venv/
+venv/

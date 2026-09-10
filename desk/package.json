@@ -1,0 +1,9 @@
+{
+  "name": "e-reader-preview",
+  "private": true,
+  "scripts": {
+    "dev": "bash run.sh",
+    "start": "bash run.sh",
+    "build": "bun --cwd app run build"
+  }
+}

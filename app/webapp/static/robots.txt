@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /d/
+
+# Plain-text docs for AI assistants and crawlers: /llms.txt, /product.md,
+# /pricing.md, /faq.md
+Sitemap: https://talktobook.com/sitemap.xml

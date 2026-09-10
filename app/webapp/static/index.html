@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#F7F0E5" />
+
+  <title>TalkToBook - Make a book from the talk</title>
+  <meta name="description" content="Paste a YouTube URL you own and get a designed EPUB for lead magnets, course handouts, webinar follow-ups, and newsletter bonuses." />
+  <meta name="keywords" content="podcast to book, transcript to ebook, youtube to book, turn podcast into book, transcript to epub, interview to book, spoken word to book, kindle ready ebook" />
+  <meta name="robots" content="index,follow" />
+  <meta name="author" content="TalkToBook" />
+  <link rel="canonical" href="https://talktobook.com/" />
+  <!-- Markdown editions for AI assistants and crawlers (AEO) -->
+  <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM-readable site summary" />
+  <link rel="alternate" type="text/markdown" href="/product.md" title="Product overview (Markdown)" />
+  <link rel="alternate" type="text/markdown" href="/faq.md" title="FAQ (Markdown)" />
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
+  <link rel="alternate" type="application/rss+xml" title="TalkToBook" href="/feed.xml" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TalkToBook" />
+  <meta property="og:title" content="TalkToBook - Make a book from the talk" />
+  <meta property="og:description" content="Paste a YouTube URL you own and get a designed EPUB for lead magnets, course handouts, webinar follow-ups, and newsletter bonuses." />
+  <meta property="og:url" content="https://talktobook.com/" />
+  <meta property="og:image" content="https://talktobook.com/static/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TalkToBook - Make a book from the talk" />
+  <meta name="twitter:description" content="Paste a YouTube URL you own and get a designed EPUB for lead magnets, course handouts, webinar follow-ups, and newsletter bonuses." />
+  <meta name="twitter:image" content="https://talktobook.com/static/og.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://talktobook.com/#org",
+        "name": "TalkToBook",
+        "url": "https://talktobook.com/",
+        "logo": "https://talktobook.com/static/og.png",
+        "sameAs": []
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://talktobook.com/#site",
+        "url": "https://talktobook.com/",
+        "name": "TalkToBook",
+        "publisher": {"@id": "https://talktobook.com/#org"},
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "TalkToBook",
+        "applicationCategory": "MultimediaApplication",
+        "applicationSubCategory": "Ebook Generator",
+        "operatingSystem": "Web",
+        "url": "https://talktobook.com/",
+        "description": "Paste a YouTube URL you own and get a designed EPUB for lead magnets, course handouts, webinar follow-ups, and newsletter bonuses.",
+        "featureList": [
+          "Paste a YouTube URL or upload .txt, .md, .srt, .vtt",
+          "Designed EPUB reading edition",
+          "Cleans timestamps and speaker markers",
+          "Lead magnet and repurposing use cases",
+          "EPUB, plus PDF and Kindle when those tools are installed"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does it read like a real book?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Spoken prose stays spoken prose. The engine strips timestamps and merges fragments into paragraphs with proper typography. We won't invent structure your talk didn't have. Light AI restructuring is on the roadmap."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use any YouTube video?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. This is for content you own or have rights to. You confirm that before each build. It is a tool for creators repurposing their own work, not for ripping other people's."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What if I only have audio?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Transcribe it first (most podcast hosts and tools export one), then paste it here. Built-in transcription is the next thing we're working on."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What formats do I get?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "EPUB. PDF and Kindle (AZW3) build when WeasyPrint and Calibre are installed."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <script>
+    // Opt into motion before first paint so reveals never flash. No-op under
+    // reduced-motion (content stays visible by default).
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.add("motion");
+    }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#start">Skip to the converter</a>
+
+  <header class="site-header">
+    <a class="wordmark" href="/">TalkToBook</a>
+    <nav aria-label="Primary">
+      <a class="btn btn-ghost btn-sm" href="#start">Generate EPUB</a>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <h1 data-reveal>Turn a YouTube URL into a reading edition.</h1>
+        <p class="lede" data-reveal>
+          One talk, webinar, episode, or lesson becomes a book your audience can keep.
+        </p>
+      </div>
+
+      <div id="start" class="hero-workbench" data-reveal>
+        <form id="preview-form" class="card form">
+          <div class="trial-head">
+            <div>
+              <h2 class="trial-title">Make an EPUB</h2>
+            </div>
+            <span class="trial-badge">No account</span>
+          </div>
+          <p class="trial-copy">Paste a captioned YouTube video you own. We pull the transcript, clean the text, and build the EPUB.</p>
+          <label class="field">
+            <span>YouTube URL</span>
+            <input type="url" name="source_url" placeholder="https://youtu.be/..." autocomplete="off" inputmode="url" />
+          </label>
+
+          <details class="fallback-inputs">
+            <summary>Use a transcript file</summary>
+            <label class="field dropzone">
+              <input type="file" name="file" accept=".txt,.md,.markdown,.srt,.vtt" />
+              <span class="dz-text">Choose <strong>.txt / .md / .srt / .vtt</strong></span>
+            </label>
+            <label class="field compact-field">
+              <span>Book title <small>(optional)</small></span>
+              <input type="text" name="title" placeholder="e.g. Launch Webinar Notes" autocomplete="off" />
+            </label>
+          </details>
+
+          <label class="checkbox">
+            <input type="checkbox" name="owns" required />
+            <span>I own or have the rights to this content, and I agree to the <a href="/terms" target="_blank" rel="noopener">Terms</a>.</span>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block">Generate EPUB</button>
+          <p class="form-error" id="preview-error" role="alert" hidden></p>
+        </form>
+
+        <div id="result" class="card result hidden">
+          <div class="result-head">
+            <div>
+              <span class="result-tag">Ready</span>
+              <h3 id="result-title">Your book</h3>
+              <p id="result-meta" class="result-meta"></p>
+            </div>
+            <a id="download-preview" class="btn btn-primary preview-download" download>Download EPUB</a>
+          </div>
+          <details class="cover-prompt-wrap">
+            <summary>Get an AI cover prompt</summary>
+            <pre id="cover-prompt" class="cover-prompt"></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use cases -->
+  <section id="use-cases" class="section use-cases">
+    <header class="section-head" data-reveal>
+      <h2 class="section-title">How creators put one recording to work.</h2>
+      <p class="section-sub">Pick the job before you polish the recording. TalkToBook turns the transcript into a format people keep.</p>
+    </header>
+    <div class="usecase-grid">
+      <article class="usecase-card usecase-card--wide usecase-card--primary" data-reveal>
+        <h3>Lead magnet</h3>
+        <p>Put the best workshop notes behind an email form as a downloadable book.</p>
+      </article>
+      <article class="usecase-card" data-reveal>
+        <h3>Course companion</h3>
+        <p>Give students a lesson, cohort call, or expert interview they can annotate.</p>
+      </article>
+      <article class="usecase-card" data-reveal>
+        <h3>Webinar follow-up</h3>
+        <p>Send attendees a useful takeaway file instead of another replay link.</p>
+      </article>
+      <article class="usecase-card usecase-card--wide" data-reveal>
+        <h3>Newsletter bonus</h3>
+        <p>Package a private conversation or teaching session as a subscriber keeper.</p>
+      </article>
+      <article class="usecase-card usecase-card--tall" data-reveal>
+        <h3>Back-catalog repurposing</h3>
+        <p>Pull evergreen ideas out of old recordings and give them a longer shelf life.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Examples -->
+  <section id="examples" class="section section-muted">
+    <header class="section-head" data-reveal>
+      <h2 class="section-title">From transcript dump to clean page.</h2>
+      <p class="section-sub">The engine strips timestamps, merges fragments into paragraphs, and sets interviewer turns apart. It does not rewrite your ideas.</p>
+    </header>
+    <div class="ba" data-reveal="group">
+      <figure class="ba-card ba-before">
+        <figcaption>Before, raw transcript</figcaption>
+        <pre class="ba-raw">**00:00:00**: &gt;&gt; Ada: Welcome back. Today we're
+talking about how good tools quietly
+disappear into the work.
+**00:00:08**: &gt;&gt; Ada: The best ones never ask
+for attention. You just reach for them.
+**00:00:15**: &gt;&gt; Grace: Right. A tool earns trust
+by being boring in the best way.</pre>
+      </figure>
+      <div class="ba-arrow" aria-hidden="true">→</div>
+      <figure class="ba-card ba-after">
+        <figcaption>After, designed page</figcaption>
+        <div class="ba-page">
+          <h4>A Short Conversation on Craft</h4>
+          <p class="byline">Ada &amp; Grace</p>
+          <p>Welcome back. Today we're talking about how good tools quietly disappear into the work. The best ones never ask for attention. You just reach for them.</p>
+          <blockquote>Right. A tool earns trust by being boring in the best way.</blockquote>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="section section-muted faq">
+    <header class="section-head" data-reveal>
+      <h2 class="section-title">Questions.</h2>
+    </header>
+    <div class="faq-list" data-reveal>
+      <details>
+        <summary>Does it read like a real book?</summary>
+        <p>Spoken prose stays spoken prose. The engine strips timestamps and merges fragments into paragraphs with proper typography. We won't invent structure your talk didn't have. Light AI restructuring is on the roadmap.</p>
+      </details>
+      <details>
+        <summary>Can I use any YouTube video?</summary>
+        <p>No. This is for content you own or have rights to. You confirm that before each build. It is a tool for creators repurposing their own work, not for ripping other people's.</p>
+      </details>
+      <details>
+        <summary>What if I only have audio?</summary>
+        <p>Transcribe it first (most podcast hosts and tools export one), then paste it here. Built-in transcription is the next thing we're working on.</p>
+      </details>
+      <details>
+        <summary>What formats do I get?</summary>
+        <p>EPUB. PDF and Kindle (AZW3) build when WeasyPrint and Calibre are installed.</p>
+      </details>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <span class="wordmark">TalkToBook</span>
+    <p>Only turn content you own into a book people can keep.</p>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="/terms">Terms &amp; Acceptable Use</a>
+      <a href="/terms#dmca">Copyright / DMCA</a>
+    </nav>
+    <p class="footer-fine">A tool for your own content. You're responsible for the rights to anything you upload.</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/motion.js"></script>
+</body>
+</html>

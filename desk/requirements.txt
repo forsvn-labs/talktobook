@@ -1,0 +1,5 @@
+# Ingest + TalkToBook. Install into .venv via python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+youtube-transcript-api>=1.2.0
+Pillow>=11.0.0
+yt-dlp>=2025.1.1
+firecrawl-anydoc>=0.2.4
