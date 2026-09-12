@@ -1,5 +1,17 @@
 # TalkToBook (ipse)
 
+
+## Read first
+
+Before any work in this repo, read:
+
+1. `INDEX.md` — map of this tree
+2. `VISION.md`, `ROADMAP.md`, `PROGRESS.md`, `CHANGELOG.md`
+
+Desk memory is `../../MEMORY.md` on the workspace, not in this repo.
+
+Then continue with the rest of this file.
+
 Public product in `app/`, Hung's Kobo desk in `desk/`.
 
 Public export is `app/` → `forsvn-labs/talktobook`. Do not push that
