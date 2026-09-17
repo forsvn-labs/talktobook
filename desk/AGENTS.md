@@ -23,7 +23,8 @@ learn-library-cook worker. Dump extract stays Add dump inbox.
 
 ## Layout
 
-- `app/` — shadcn one-view desk (Vite + React + bun + Tailwind 4)
+- `app/` — shadcn one-view desk (Vite + React + bun + Tailwind 4). Resizable
+  shelf, ⌘K, sonner. Confirm still gates vault and Drive writes.
 - `server.py` — library, spine, cover, book, device, sync, jobs, ingest, read-state
 - `spine.py` — large/generated EPUB chapter serving
 - `ingest.py` — cook (URL auto-routes YouTube/video/Defuddle) + AnyDoc + promote + build hook

@@ -134,13 +134,22 @@ export function SyncSheet({
         className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg"
       >
         <SheetHeader>
-          <SheetTitle>Sync</SheetTitle>
-          <SheetDescription>
-            Copy-only to {"<mount>"}/books/. Dry-run, then confirm. No deletes.
-          </SheetDescription>
+            <SheetTitle>Sync</SheetTitle>
+            <SheetDescription>
+              Copy-only to {"<mount>"}/books/. Dry-run, then confirm. No
+              deletes. Identical files skip. A replacement (same name, different
+              bytes) aborts the whole run.
+            </SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-col gap-4 px-4 py-4">
+          <Alert>
+            <AlertTitle>Copy-only</AlertTitle>
+            <AlertDescription>
+              This desk never deletes on the Kobo. Confirm still gates the
+              write. Plug in the reader, dry-run, then confirm.
+            </AlertDescription>
+          </Alert>
           {device && !device.mounted ? (
             <Alert variant="destructive">
               <AlertTitle>Kobo not mounted</AlertTitle>

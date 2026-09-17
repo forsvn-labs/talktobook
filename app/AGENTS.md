@@ -19,7 +19,7 @@ brew install yt-dlp            # optional, better YouTube title/channel
 ```
 
 - CLI entry: `scripts/` (see `README.md`). Skill: copy the folder into `~/.claude/skills/`.
-- Web app: `webapp/` (serves HTML editions; honors `PUBLIC_URL` for canonical/OG/JSON-LD URLs).
+- Web app: `webapp/` — FastAPI engine plus shadcn UI in `webapp/ui/` (honors `PUBLIC_URL` for canonical/OG/JSON-LD URLs).
 
 ## Shape
 

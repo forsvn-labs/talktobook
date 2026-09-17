@@ -50,6 +50,7 @@ export function IngestSheet({
   const [importShelf, setImportShelf] = useState<"books" | "generated">("books")
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
+  const [pane, setPane] = useState<"file" | "transcript" | "epub">("file")
   const [buildOpen, setBuildOpen] = useState(false)
   const [dumpCookOpen, setDumpCookOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
@@ -91,107 +92,139 @@ export function IngestSheet({
             <SheetTitle>Ingest</SheetTitle>
             <SheetDescription>
               Files, a pasted transcript, or an EPUB already on this Mac.
-              YouTube and article URLs go on the Shelf.
+              YouTube and article URLs go on the Shelf. Vault and Drive writes
+              still need Confirm.
             </SheetDescription>
           </SheetHeader>
 
           <div className="flex flex-col gap-5 px-4 py-4">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="cook-path">File</FieldLabel>
-                <div className="flex gap-2">
-                  <Input
-                    id="cook-path"
-                    value={filePath}
-                    onChange={(e) => setFilePath(e.target.value)}
-                    placeholder="/path/to/file.pdf"
+            <div role="tablist" className="flex gap-1 rounded-lg bg-muted p-1">
+              {(
+                [
+                  ["file", "File"],
+                  ["transcript", "Transcript"],
+                  ["epub", "EPUB"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={pane === id}
+                  className={
+                    pane === id
+                      ? "h-8 flex-1 rounded-md bg-background text-sm"
+                      : "h-8 flex-1 rounded-md text-sm text-muted-foreground"
+                  }
+                  onClick={() => setPane(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {pane === "file" && (
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="cook-path">File</FieldLabel>
+                  <div className="flex gap-2">
+                    <Input
+                      id="cook-path"
+                      value={filePath}
+                      onChange={(e) => setFilePath(e.target.value)}
+                      placeholder="/path/to/file.pdf"
+                      disabled={busy}
+                    />
+                    <Button
+                      type="button"
+                      disabled={busy || !filePath.trim()}
+                      onClick={() =>
+                        run("Adding file…", () =>
+                          api.cook({ path: filePath.trim() }),
+                        )
+                      }
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </Field>
+              </FieldGroup>
+            )}
+
+            {pane === "transcript" && (
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="ingest-tr">Paste transcript</FieldLabel>
+                  <Textarea
+                    id="ingest-tr"
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    rows={6}
                     disabled={busy}
+                    placeholder="Paste a timestamped transcript…"
                   />
                   <Button
                     type="button"
-                    disabled={busy || !filePath.trim()}
+                    className="mt-2"
+                    disabled={busy || transcript.trim().length < 20}
                     onClick={() =>
-                      run("Adding file…", () =>
-                        api.cook({ path: filePath.trim() }),
+                      run("Adding transcript…", () =>
+                        api.ingestTranscript(transcript),
                       )
                     }
                   >
                     Add
                   </Button>
-                </div>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="ingest-tr">Paste transcript</FieldLabel>
-                <Textarea
-                  id="ingest-tr"
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  rows={6}
-                  disabled={busy}
-                  placeholder="Paste a timestamped transcript…"
-                />
-                <Button
-                  type="button"
-                  className="mt-2"
-                  disabled={busy || transcript.trim().length < 20}
-                  onClick={() =>
-                    run("Adding transcript…", () =>
-                      api.ingestTranscript(transcript),
-                    )
-                  }
-                >
-                  Add
-                </Button>
-              </Field>
-            </FieldGroup>
-
-            <Separator />
-
-            <div className="flex flex-col gap-3">
-              <div className="text-sm font-medium">Existing EPUB</div>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="import-epub">Path</FieldLabel>
-                  <Input
-                    id="import-epub"
-                    value={importPath}
-                    onChange={(e) => setImportPath(e.target.value)}
-                    placeholder="/path/to/book.epub"
-                    disabled={busy}
-                  />
                 </Field>
-                <div className="flex flex-wrap items-end gap-2">
-                  <Field className="min-w-40 flex-1">
-                    <FieldLabel>Shelf</FieldLabel>
-                    <Select
-                      value={importShelf}
-                      onValueChange={(v) =>
-                        setImportShelf(v as "books" | "generated")
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="books">Licensed books</SelectItem>
-                        <SelectItem value="generated">
-                          Generated (operator)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={busy || !importPath.trim()}
-                    onClick={() => setImportOpen(true)}
-                  >
-                    Import
-                  </Button>
-                </div>
               </FieldGroup>
-            </div>
+            )}
+
+            {pane === "epub" && (
+              <div className="flex flex-col gap-3">
+                <div className="text-sm font-medium">Existing EPUB</div>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="import-epub">Path</FieldLabel>
+                    <Input
+                      id="import-epub"
+                      value={importPath}
+                      onChange={(e) => setImportPath(e.target.value)}
+                      placeholder="/path/to/book.epub"
+                      disabled={busy}
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <Field className="min-w-40 flex-1">
+                      <FieldLabel>Shelf</FieldLabel>
+                      <Select
+                        value={importShelf}
+                        onValueChange={(v) =>
+                          setImportShelf(v as "books" | "generated")
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="books">Licensed books</SelectItem>
+                          <SelectItem value="generated">
+                            Generated (operator)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy || !importPath.trim()}
+                      onClick={() => setImportOpen(true)}
+                    >
+                      Import
+                    </Button>
+                  </div>
+                </FieldGroup>
+              </div>
+            )}
 
             {status && (
               <Alert>

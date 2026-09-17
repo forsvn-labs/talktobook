@@ -29,6 +29,11 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -68,6 +73,7 @@ export function App() {
   const [styleSeed, setStyleSeed] = useState("")
   const [fetching, setFetching] = useState(false)
   const [cookOpen, setCookOpen] = useState(false)
+  const [cookConfirm, setCookConfirm] = useState(false)
   const [rebuildLibrary, setRebuildLibrary] = useState(true)
   const [makeOpen, setMakeOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
@@ -361,18 +367,42 @@ export function App() {
         </header>
 
         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-          <aside
-            className={
-              shelfOpen
-                ? "h-full min-h-0 w-[min(20rem,40%)] min-w-0 shrink-0 overflow-hidden border-r border-sidebar-border transition-[width] duration-200 ease-out"
-                : "h-full min-h-0 w-0 min-w-0 overflow-hidden transition-[width] duration-200 ease-out"
-            }
-          >
-            <div className="h-full w-full">{rail}</div>
-          </aside>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {stage}
-          </div>
+          {deskSplit && shelfOpen ? (
+            <ResizablePanelGroup
+              orientation="horizontal"
+              className="min-h-0 min-w-0 flex-1"
+            >
+              <ResizablePanel
+                defaultSize={28}
+                minSize={18}
+                maxSize={42}
+                className="min-h-0"
+              >
+                <div className="h-full min-h-0 border-r border-sidebar-border">
+                  {rail}
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={72} minSize={40} className="min-h-0" onResize={() => reader.relayout()}>
+                {stage}
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            <>
+              <aside
+                className={
+                  shelfOpen
+                    ? "h-full min-h-0 w-[min(20rem,40%)] min-w-0 shrink-0 overflow-hidden border-r border-sidebar-border transition-[width] duration-200 ease-out"
+                    : "h-full min-h-0 w-0 min-w-0 overflow-hidden transition-[width] duration-200 ease-out"
+                }
+              >
+                <div className="h-full w-full">{rail}</div>
+              </aside>
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                {stage}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -407,17 +437,32 @@ export function App() {
         onLibraryRefresh={() => void loadLibrary()}
       />
       <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} shelves={shelves} />
-      <BookCommand shelves={shelves} onSelect={selectBook} />
+      <BookCommand
+        shelves={shelves}
+        onSelect={selectBook}
+        onIngest={() => setIngestOpen(true)}
+        onStyle={() => void openStyle()}
+        onSync={() => setSyncOpen(true)}
+        onToggleShelf={() => setShelfUser(!shelfOpen)}
+      />
       <Toaster position="bottom-right" theme="dark" richColors closeButton />
 
-      <AlertDialog open={cookOpen} onOpenChange={setCookOpen}>
+      <AlertDialog
+        open={cookOpen}
+        onOpenChange={(open) => {
+          setCookOpen(open)
+          if (open) setCookConfirm(false)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cook this into Hung Library?</AlertDialogTitle>
             <AlertDialogDescription>
-              Copies the markdown into `_hq/vault/library/{cookDomain}/`.
-              Rebuild writes Drive library/generated/. Send to cook starts a
-              nested worker that rewrites this one draft first.
+              Confirm still gates every vault and Drive write. Cancel leaves the
+              draft in inbox. Cook copies markdown into
+              `_hq/vault/library/{cookDomain}/`. Rebuild writes Drive
+              library/generated/. Send to cook starts a nested worker that
+              rewrites this one draft first.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Select value={cookDomain} onValueChange={setCookDomain}>
@@ -442,13 +487,25 @@ export function App() {
               Rebuild Hung Library
             </Label>
           </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="cook-confirm"
+              checked={cookConfirm}
+              onCheckedChange={(v) => setCookConfirm(v === true)}
+            />
+            <Label htmlFor="cook-confirm" className="font-normal">
+              I confirm writing to the vault
+              {rebuildLibrary ? " and Drive" : ""}
+            </Label>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
               type="button"
               variant="outline"
+              disabled={!cookConfirm || !draftPath}
               onClick={() => {
-                if (!draftPath) return
+                if (!draftPath || !cookConfirm) return
                 void runDraftAction("Send to cook failed.", () =>
                   api.sendAgent(draftPath, cookDomain),
                 )
@@ -457,8 +514,9 @@ export function App() {
               Send to cook
             </Button>
             <AlertDialogAction
+              disabled={!cookConfirm || !draftPath}
               onClick={() => {
-                if (!draftPath) return
+                if (!draftPath || !cookConfirm) return
                 void runDraftAction("Cook failed.", () =>
                   api.cookToBook({
                     path: draftPath,

@@ -192,7 +192,7 @@ export function LibraryRail({
                             b.mode === "spine" &&
                               "border-primary/40 text-primary",
                             b.mode === "draft" &&
-                              "border-amber-400/50 text-amber-200",
+                              "border-primary/50 text-primary",
                           )}
                         >
                           {b.mode}

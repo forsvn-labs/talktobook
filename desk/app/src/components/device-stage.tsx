@@ -203,6 +203,8 @@ export function DeviceStage({
         <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
           {d.short}
           {current ? ` · ${current.title}` : ""}
+          {current?.mode === "spine" ? " · spine preview" : ""}
+          {current?.mode === "draft" ? " · draft" : ""}
           {pageInfo ? ` · ${pageInfo}` : ""}
         </p>
         {status && (

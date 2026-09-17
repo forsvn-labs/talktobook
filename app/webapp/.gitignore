@@ -7,3 +7,5 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+ui/node_modules/
+ui/dist/

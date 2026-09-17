@@ -260,6 +260,24 @@ def assemble_book(
     return md
 
 
+def preview_markdown(
+    raw_text: str,
+    fmt: str,
+    title: str,
+    author: str | None,
+    source_url: str | None = None,
+    *,
+    body: str | None = None,
+) -> str:
+    """Clean a transcript into the attributed Markdown edition, without pandoc."""
+    text = normalize_input(raw_text, fmt)
+    if body is None:
+        body = t2e.clean_transcript(text)
+    if not body.strip():
+        raise EngineError("No readable text found in the transcript.")
+    return assemble_book(title, author, source_url, body, watermark=False)
+
+
 # ---------------------------------------------------------------------------
 # Stylesheet & cover
 # ---------------------------------------------------------------------------
@@ -415,7 +433,9 @@ def generate(
     if not body.strip():
         raise EngineError("No readable text found in the transcript.")
 
-    md = assemble_book(title, author, source_url, body, watermark=False)
+    md = preview_markdown(
+        raw_text, fmt, title, author, source_url, body=body,
+    )
     md_path = job_dir / "book.md"
     md_path.write_text(md, encoding="utf-8")
 

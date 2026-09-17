@@ -70,6 +70,8 @@ def _build_one(s: dict, dest_root: Path) -> dict:
     if use_cover and (not cov.exists() or use_cover.stat().st_mtime > cov.stat().st_mtime):
         shutil.copyfile(use_cover, cov)
     item = {k: s[k] for k in ("slug", "title", "author", "kind", "blurb")}
+    item["unofficial"] = True
+    item["preview"] = f"/api/samples/{s['slug']}/preview"
     item["epub"] = f"/api/sample/{s['slug']}/book.epub"
     item["cover"] = f"/api/sample/{s['slug']}/cover.png" if (d / "cover.png").exists() else None
     item["pdf"] = f"/api/sample/{s['slug']}/book.pdf" if (d / "book.pdf").exists() else None
@@ -100,3 +102,39 @@ def file_for(slug: str, name: str) -> Path | None:
         return None
     p = config.JOBS_DIR / "_samples" / slug / name
     return p if p.exists() else None
+
+
+def catalog() -> list[dict]:
+    """Sample metadata without building EPUBs. Always available."""
+    out = []
+    for s in SAMPLES:
+        item = {k: s[k] for k in ("slug", "title", "author", "kind", "blurb")}
+        item["unofficial"] = True
+        item["preview"] = f"/api/samples/{s['slug']}/preview"
+        item["epub"] = f"/api/sample/{s['slug']}/book.epub"
+        out.append(item)
+    return out
+
+
+def preview(slug: str) -> dict | None:
+    """Attributed Markdown reading preview. Does not need pandoc."""
+    s = next((item for item in SAMPLES if item["slug"] == slug), None)
+    if not s:
+        return None
+    src = SRC_DIR / s["src"]
+    if not src.exists():
+        return None
+    raw = src.read_text(encoding="utf-8")
+    try:
+        markdown = engine.preview_markdown(raw, "md", s["title"], s["author"])
+    except engine.EngineError:
+        return None
+    return {
+        "slug": s["slug"],
+        "title": s["title"],
+        "author": s["author"],
+        "kind": s["kind"],
+        "blurb": s["blurb"],
+        "markdown": markdown,
+        "unofficial": True,
+    }

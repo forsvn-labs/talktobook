@@ -1,5 +1,18 @@
 # TalkToBook changelog
 
+## 2026-09-17 - shadcn converter and desk
+
+- Public webapp is a shadcn React workbench on the existing FastAPI API
+  (`/api/config`, `/api/preview`, `/api/job/{id}`, `/d/...`). Sample editions,
+  job status, transcript paste/upload, capabilities, error states, and a
+  Markdown reading preview are in the UI. Every edition is framed as unofficial
+  and attributed. Python engine is unchanged as SSOT besides a pandoc-free
+  preview helper.
+- Desk shelf and device sit on resizable panels. ⌘K reaches ingest, style, and
+  copy-only Kobo sync. Ingest is paneled. Cook confirm still gates vault/Drive
+  writes.
+- `@shadcn/lint` on both React UIs encodes DESIGN.md tokens.
+
 ## 2026-09-08 - Local converter only
 
 - Removed unused billing hooks from the exported web app. The public tree is
