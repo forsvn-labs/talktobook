@@ -21,6 +21,10 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
+The converter UI is a shadcn React workbench in `ui/`. FastAPI still owns
+`/api/config`, `/api/preview`, `/api/job/{id}`, `/api/samples`, and `/d/...`.
+`./run.sh` builds `ui/` when bun is installed, then serves the app on :8000.
+
 Open http://localhost:8000.
 
 `run.sh` also recreates the ignored browser and social images before it starts
@@ -66,10 +70,13 @@ force-add the generated PNG or SVG files.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/` | Landing + converter |
+| GET | `/` | Landing + converter (shadcn UI when `ui/dist` exists) |
 | GET | `/api/config` | Format capabilities |
+| GET | `/api/samples` | Original demo editions |
+| GET | `/api/samples/{slug}/preview` | Markdown reading preview |
 | POST | `/api/preview` | Build an EPUB from a YouTube URL or uploaded transcript |
 | GET | `/api/job/{id}` | Job status |
+| GET | `/api/job/{id}/preview` | Assembled Markdown preview |
 | GET | `/d/{id}/{name}` | File download |
 
 Copy `.env.example` to `.env` if you want to set `PUBLIC_URL` or job storage.

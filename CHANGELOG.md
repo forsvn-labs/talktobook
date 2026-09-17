@@ -1,5 +1,31 @@
 # TalkToBook changelog
 
+## 2026-09-17 - Editorial workbench (unshipped)
+
+- Public `/` is a publishing desk: first viewport is the converter panel
+  (`#FFFAF2`) beside a Newsreader page proof. Oxblood is a mark (links, checks,
+  hairlines, speaker names, selected tabs). Sample editions are spines on the
+  desk, not three identical cards. FastAPI contract unchanged.
+- Desk chrome is paper/ink with oxblood marks. Resizable shelf + device is
+  still one view. Confirm still gates vault and Drive writes.
+
+## 2026-09-17 - shadcn converter and desk
+
+- Public webapp is a shadcn React workbench on the existing FastAPI API
+  (`/api/config`, `/api/preview`, `/api/job/{id}`, `/d/...`). Sample editions,
+  job status, transcript paste/upload, capabilities, error states, and a
+  Markdown reading preview are in the UI. Every edition is framed as unofficial
+  and attributed. Python engine is unchanged as SSOT besides a pandoc-free
+  preview helper.
+- Desk shelf and device sit on resizable panels. ⌘K reaches ingest, style, and
+  copy-only Kobo sync. Ingest is paneled. Cook confirm still gates vault/Drive
+  writes.
+- `@shadcn/lint` on both React UIs encodes DESIGN.md tokens.
+- Web Markdown/EPUB now carry the CLI unofficial attribution block and EPUB
+  rights metadata. Sample catalog omits EPUB links until the file exists.
+  Public header is a solid paper bar (no glass). Desk vault/Drive dialogs use
+  an explicit confirm checkbox.
+
 ## 2026-09-08 - Local converter only
 
 - Removed unused billing hooks from the exported web app. The public tree is

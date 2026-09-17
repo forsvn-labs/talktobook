@@ -1,0 +1,47 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["src/components/ui", "dist", "node_modules"],
+  "jsPlugins": ["@shadcn/lint"],
+  "plugins": ["react", "typescript", "oxc"],
+  "settings": {
+    "shadcn": {
+      "note": "TalkToBook public UI: DESIGN.md paper #F7F0E5, ink #1E1A17, panel #FFFAF2, oxblood #7F1D1D as a mark (links, checks, hairlines) not a fill. Newsreader display, Instrument Sans UI. First viewport is converter + reading proof. No neon, lime, purple gradients, or glassmorphism."
+    }
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "message": "Use DESIGN.md tokens from src/index.css (paper, ink, oxblood). Do not paint lime, purple, or neon."
+      }
+    ],
+    "shadcn/no-arbitrary-values": "off",
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          {
+            "pattern": "^Button$",
+            "allow": ["layout", "w-full"]
+          },
+          {
+            "pattern": "^Badge$",
+            "allow": ["layout"]
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/components/ui/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-raw-colors": "off",
+        "shadcn/no-arbitrary-values": "off"
+      }
+    }
+  ]
+}

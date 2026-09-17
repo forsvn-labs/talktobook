@@ -3,7 +3,8 @@
 ## Now
 
 1. Keep YouTube and local Markdown inputs, cleaning, covers, attribution, and
-   dual Markdown/EPUB output.
+   dual Markdown/EPUB output. Public converter is the editorial workbench on the
+   existing FastAPI API (converter + reading proof in the first viewport).
 2. Keep the Kobo desk loop (preview, ingest, copy-only sync) as the operator
    surface.
 

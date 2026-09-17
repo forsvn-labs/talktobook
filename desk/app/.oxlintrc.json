@@ -1,17 +1,39 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "ignorePatterns": ["src/components/ui", "dist"],
+  "jsPlugins": ["@shadcn/lint"],
   "plugins": ["react", "typescript", "oxc"],
+  "settings": {
+    "shadcn": {
+      "note": "TalkToBook desk: paper #F7F0E5, ink #1E1A17, oxblood #7F1D1D as a mark (links, checks, hairlines) not a fill. Geist. One-view resizable shelf + device. Confirm still gates vault and Drive writes."
+    }
+  },
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "message": "Desk chrome uses tokens in src/index.css. Device frame greys in index.css are the exception for the reader bezel."
+      }
+    ],
+    "shadcn/no-restyle": "off"
   },
   "overrides": [
     {
       "files": ["src/components/ui/*.{ts,tsx}"],
       "rules": {
         "react/only-export-components": "off",
-        "react/purity": "off"
+        "react/purity": "off",
+        "shadcn/no-restyle": "off",
+        "shadcn/no-raw-colors": "off"
+      }
+    },
+    {
+      "files": ["src/components/device-stage.tsx"],
+      "rules": {
+        "shadcn/no-raw-colors": "off",
+        "shadcn/no-restyle": "off"
       }
     }
   ]

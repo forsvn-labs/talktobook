@@ -15,11 +15,12 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import config, engine, storage
+from . import config, engine, samples, storage
 
 app = FastAPI(title=f"{config.APP_NAME} API")
 
 STATIC_DIR = config.BASE_DIR / "static"
+UI_DIST = config.BASE_DIR / "ui" / "dist"
 config.JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -94,6 +95,8 @@ DOWNLOAD_NAMES = {
     "epub": ("book.epub", "application/epub+zip"),
     "pdf": ("book.pdf", "application/pdf"),
     "azw3": ("book.azw3", "application/vnd.amazon.ebook"),
+    "md": ("book.md", "text/markdown; charset=utf-8"),
+    "cover": ("cover.png", "image/png"),
 }
 
 
@@ -123,6 +126,11 @@ def _download_url(job: storage.Job, kind: str) -> str:
 
 def _job_public(job: storage.Job) -> dict:
     files = {k: _download_url(job, k) for k in job.outputs}
+    if (job.out_dir / "book.md").exists():
+        files.setdefault("md", _download_url(job, "md"))
+    if (job.out_dir / "cover.png").exists():
+        files.setdefault("cover", _download_url(job, "cover"))
+    ready = bool(job.outputs)
     return {
         "job_id": job.id,
         "title": job.title,
@@ -131,6 +139,10 @@ def _job_public(job: storage.Job) -> dict:
         "cover_prompt": job.cover_prompt,
         "preview": files,
         "downloads": files,
+        "status": "ready" if ready else "empty",
+        "formats": sorted(job.outputs.keys()),
+        "unofficial": True,
+        "preview_text": f"/api/job/{job.id}/preview",
     }
 
 
@@ -138,13 +150,31 @@ def _job_public(job: storage.Job) -> dict:
 # Pages
 # ---------------------------------------------------------------------------
 
+def _serve_file(path: Path, media_type: str) -> Response:
+    origin = (config.PUBLIC_URL or "").rstrip("/")
+    body = path.read_text(encoding="utf-8")
+    if origin:
+        body = body.replace("https://talktobook.com", origin)
+    return Response(content=body, media_type=media_type)
+
+
+def _serve_spa() -> Response:
+    """Prefer the built shadcn UI; fall back to the legacy static page."""
+    index = UI_DIST / "index.html"
+    if index.exists():
+        return _serve_file(index, "text/html; charset=utf-8")
+    return _serve_static("index.html", "text/html; charset=utf-8")
+
+
 @app.get("/")
 async def index():
-    return _serve_static("index.html", "text/html; charset=utf-8")
+    return _serve_spa()
 
 
 @app.get("/terms")
 async def terms():
+    if (UI_DIST / "index.html").exists():
+        return _serve_spa()
     return _serve_static("terms.html", "text/html; charset=utf-8")
 
 
@@ -214,7 +244,52 @@ async def public_config():
         "capabilities": engine.capabilities(),
         "contact_email": config.CONTACT_EMAIL,
         "dmca_email": config.DMCA_EMAIL,
+        "allowed_exts": sorted(config.ALLOWED_EXTS),
+        "max_upload_bytes": config.MAX_UPLOAD_BYTES,
+        "unofficial": True,
     }
+
+
+@app.get("/api/samples")
+async def list_samples():
+    built = samples.get_manifest()
+    by_slug = {item["slug"]: item for item in built}
+    catalog = []
+    for item in samples.catalog():
+        catalog.append({**item, **by_slug.get(item["slug"], {})})
+    return {
+        "samples": catalog,
+        "unofficial": True,
+        "note": "Original demo editions. Unofficial reading pages that credit fictional authors.",
+    }
+
+
+@app.get("/api/samples/{slug}/preview")
+async def sample_preview(slug: str):
+    data = samples.preview(slug)
+    if not data:
+        raise HTTPException(404, "Unknown sample.")
+    return data
+
+
+@app.get("/api/sample/{slug}/{name}")
+async def sample_file(slug: str, name: str):
+    path = samples.file_for(slug, name)
+    if not path:
+        raise HTTPException(404, "Not found.")
+    media = next(
+        (m for n, m in DOWNLOAD_NAMES.values() if n == name),
+        "application/octet-stream",
+    )
+    return FileResponse(
+        path,
+        media_type=media,
+        filename=name,
+        headers={
+            "Cross-Origin-Resource-Policy": "same-origin",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +375,24 @@ async def job_status(job_id: str):
     return _job_public(job)
 
 
+@app.get("/api/job/{job_id}/preview")
+async def job_preview(job_id: str):
+    job = storage.load(job_id)
+    if not job:
+        raise HTTPException(404, "Unknown job.")
+    md_path = job.out_dir / "book.md"
+    if not md_path.exists():
+        raise HTTPException(404, "Preview is not ready.")
+    return {
+        "job_id": job.id,
+        "title": job.title,
+        "author": job.author,
+        "markdown": md_path.read_text(encoding="utf-8"),
+        "unofficial": True,
+        "word_count": job.word_count,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Downloads
 # ---------------------------------------------------------------------------
@@ -332,5 +425,7 @@ async def download(job_id: str, name: str):
     )
 
 
-# Mount static assets last so it doesn't shadow API routes.
+# Built Vite assets, then legacy static files. Mount last so API routes win.
+if (UI_DIST / "assets").is_dir():
+    app.mount("/assets", StaticFiles(directory=str(UI_DIST / "assets")), name="ui-assets")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

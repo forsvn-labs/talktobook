@@ -4,42 +4,59 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Night reading desk — dark room, one amber accent (e-ink lamp). */
+/* Reading desk — paper, ink, oxblood mark. Device is the lit object. */
 :root {
-  color-scheme: only dark;
-  --background: oklch(0.16 0.01 260);
-  --foreground: oklch(0.92 0.01 80);
-  --card: oklch(0.19 0.01 260);
-  --card-foreground: oklch(0.92 0.01 80);
-  --popover: oklch(0.18 0.012 260);
-  --popover-foreground: oklch(0.92 0.01 80);
-  --primary: oklch(0.78 0.09 75);
-  --primary-foreground: oklch(0.18 0.02 75);
-  --secondary: oklch(0.24 0.012 260);
-  --secondary-foreground: oklch(0.88 0.01 80);
-  --muted: oklch(0.24 0.01 260);
-  --muted-foreground: oklch(0.68 0.015 260);
-  --accent: oklch(0.26 0.015 260);
-  --accent-foreground: oklch(0.94 0.01 80);
-  --destructive: oklch(0.62 0.18 25);
-  --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.12);
-  --ring: oklch(0.78 0.09 75);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.14 0.01 260);
-  --sidebar-foreground: oklch(0.9 0.01 80);
-  --sidebar-border: oklch(1 0 0 / 0.08);
-  --desk-glow: oklch(0.78 0.09 75 / 0.08);
+  color-scheme: light;
+  --paper: #f7f0e5;
+  --paper-2: #efe5d8;
+  --panel: #fffaf2;
+  --ink: #1e1a17;
+  --ink-2: #514842;
+  --muted-copy: #6f655e;
+  --rule: #d9cdbd;
+  --oxblood: #7f1d1d;
+  --oxblood-2: #4b1515;
+  --oxblood-soft: #ead7cf;
+  --error: #9b1c1c;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--panel);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--muted-copy);
+  --accent: var(--oxblood-soft);
+  --accent-foreground: var(--oxblood-2);
+  --destructive: var(--error);
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: var(--oxblood);
+  --radius: 0.5rem;
+  --sidebar: var(--paper-2);
+  --sidebar-foreground: var(--ink);
+  --sidebar-border: var(--rule);
+  --desk-glow: color-mix(in srgb, var(--oxblood) 10%, transparent);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --sidebar-primary: oklch(0.78 0.09 75);
-  --sidebar-primary-foreground: oklch(0.18 0.02 75);
-  --sidebar-accent: oklch(0.22 0.012 260);
-  --sidebar-accent-foreground: oklch(0.94 0.01 80);
-  --sidebar-ring: oklch(0.78 0.09 75);
+  --sidebar-primary: var(--oxblood);
+  --sidebar-primary-foreground: var(--panel);
+  --sidebar-accent: var(--panel);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-ring: var(--oxblood);
 }
 
 @theme inline {
   --font-sans: "Geist Variable", ui-sans-serif, sans-serif;
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-oxblood: var(--oxblood);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -83,13 +100,36 @@
     overflow: hidden;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-paper text-ink font-sans antialiased;
     margin: 0;
   }
-  ::selection {
-    background: oklch(0.78 0.09 75 / 0.35);
-    color: var(--foreground);
+  a {
+    color: var(--oxblood);
   }
+  a:hover {
+    color: var(--oxblood-2);
+  }
+  :focus-visible {
+    outline: 2px solid var(--oxblood);
+    outline-offset: 3px;
+  }
+  ::selection {
+    background: var(--oxblood-soft);
+    color: var(--ink);
+  }
+}
+
+.wordmark-mark::after {
+  content: "";
+  display: block;
+  width: 1.15rem;
+  height: 2px;
+  margin-top: 0.2rem;
+  background: var(--oxblood);
+}
+
+.device-slot {
+  background: var(--paper-2);
 }
 
 /* Kobo device chrome */
@@ -100,9 +140,8 @@
   border: 10px solid #1a1a1a;
   border-radius: 18px;
   box-shadow:
-    0 0 0 1px oklch(1 0 0 / 0.06),
-    0 24px 48px oklch(0 0 0 / 0.45),
-    0 0 80px var(--desk-glow);
+    0 0 0 1px rgb(30 26 23 / 0.06),
+    0 18px 40px rgb(30 26 23 / 0.18);
   overflow: hidden;
   transition: box-shadow 200ms var(--ease-out);
 }
@@ -129,15 +168,4 @@
 .device-frame #spine-host {
   display: none;
   overflow: hidden;
-}
-
-.dark {
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }

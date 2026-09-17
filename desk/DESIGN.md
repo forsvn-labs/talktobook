@@ -1,28 +1,29 @@
 # Design — E-reader desk
 
-Documented from the built UI (2026-09-07). Operate mode: night reading desk.
+Documented from the built UI (2026-09-17). Operate mode: paper reading desk.
 
 ## World
 
-Dark room around a lit reader. Restrained cool neutrals, one amber lamp accent.
-Not a marketing page; not cream+serif book cliché in the chrome.
+A quiet publishing desk around a lit device. Warm paper, ink type, oxblood as a
+mark. The shelf and device share one view. Not a marketing page.
 
 ## Tokens
 
-- Background: `oklch(0.16 0.01 260)` with slightly deeper sidebar.
-- Foreground: warm off-white `oklch(0.92 0.01 80)`.
-- Primary / ring: amber `oklch(0.78 0.09 75)`.
-- Radius: `0.625rem`. Font: Geist Variable (product sans).
-- Soft desk glow behind the device frame.
+- Background / paper: `#F7F0E5`. Panel: `#FFFAF2`. Paper-2 shelf: `#EFE5D8`.
+- Ink: `#1E1A17`. Secondary copy: `#514842`.
+- Accent / ring / checks / wordmark rule: oxblood `#7F1D1D`. Never a hero fill.
+- Radius: `0.5rem`. Font: Geist Variable (product sans).
+- Device bezel stays dark plastic; the page inside stays e-ink paper.
 
 ## Layout
 
-- Top toolbar: Shelf toggle + brand + Ingest / Style / Sync / ⌘K.
-- Shelf pushes the device: open = `min(20rem, 40%)` rail, device fills the rest and the frame scales. Closed = device full pane. No overlay drawer.
+- Top toolbar: Shelf toggle + brand (oxblood hairline) + Ingest / Style / Sync / ⌘K.
+- Shelf pushes the device: open = resizable rail, device fills the rest and the frame scales. Closed = device full pane. No overlay drawer.
 - Device frame scales down to the stage; native Clara/Libra/Paperwhite CSS pixels stay inside a transform so it never paints over chrome. Kindle uses a flatter bezel; Kobo stays rounder.
 - Center stage: device switcher, reading controls, status line, bezel. Drafts add Cook / Make EPUB / Discard.
 - Overlays: Contents sheet, Ingest sheet, Style sheet (SSOT CSS), Sync sheet, command dialog.
 - URL fetch is only on the Shelf. No scrape-mode toggle.
+- Confirm still gates every vault and Drive write.
 
 ## Components
 

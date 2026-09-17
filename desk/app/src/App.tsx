@@ -29,6 +29,11 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -68,8 +73,10 @@ export function App() {
   const [styleSeed, setStyleSeed] = useState("")
   const [fetching, setFetching] = useState(false)
   const [cookOpen, setCookOpen] = useState(false)
+  const [cookConfirm, setCookConfirm] = useState(false)
   const [rebuildLibrary, setRebuildLibrary] = useState(true)
   const [makeOpen, setMakeOpen] = useState(false)
+  const [makeConfirm, setMakeConfirm] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [cookDomain, setCookDomain] = useState("business")
   const deskSplit = useDeskSplit()
@@ -289,7 +296,7 @@ export function App() {
   return (
     <TooltipProvider>
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden border-b border-border bg-card/40 px-3">
+        <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden border-b border-border bg-panel px-3">
           <Button
             type="button"
             size="sm"
@@ -306,7 +313,7 @@ export function App() {
             )}
             Shelf
           </Button>
-          <div className="min-w-0 truncate text-sm font-semibold tracking-tight">
+          <div className="wordmark-mark min-w-0 truncate text-sm font-semibold tracking-tight">
             E-reader
           </div>
           <div className="hidden min-w-0 truncate text-xs text-muted-foreground md:block">
@@ -361,18 +368,42 @@ export function App() {
         </header>
 
         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-          <aside
-            className={
-              shelfOpen
-                ? "h-full min-h-0 w-[min(20rem,40%)] min-w-0 shrink-0 overflow-hidden border-r border-sidebar-border transition-[width] duration-200 ease-out"
-                : "h-full min-h-0 w-0 min-w-0 overflow-hidden transition-[width] duration-200 ease-out"
-            }
-          >
-            <div className="h-full w-full">{rail}</div>
-          </aside>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {stage}
-          </div>
+          {deskSplit && shelfOpen ? (
+            <ResizablePanelGroup
+              orientation="horizontal"
+              className="min-h-0 min-w-0 flex-1"
+            >
+              <ResizablePanel
+                defaultSize={28}
+                minSize={18}
+                maxSize={42}
+                className="min-h-0"
+              >
+                <div className="h-full min-h-0 border-r border-sidebar-border">
+                  {rail}
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={72} minSize={40} className="min-h-0" onResize={() => reader.relayout()}>
+                {stage}
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            <>
+              <aside
+                className={
+                  shelfOpen
+                    ? "h-full min-h-0 w-[min(20rem,40%)] min-w-0 shrink-0 overflow-hidden border-r border-sidebar-border transition-[width] duration-200 ease-out"
+                    : "h-full min-h-0 w-0 min-w-0 overflow-hidden transition-[width] duration-200 ease-out"
+                }
+              >
+                <div className="h-full w-full">{rail}</div>
+              </aside>
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                {stage}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -407,17 +438,32 @@ export function App() {
         onLibraryRefresh={() => void loadLibrary()}
       />
       <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} shelves={shelves} />
-      <BookCommand shelves={shelves} onSelect={selectBook} />
-      <Toaster position="bottom-right" theme="dark" richColors closeButton />
+      <BookCommand
+        shelves={shelves}
+        onSelect={selectBook}
+        onIngest={() => setIngestOpen(true)}
+        onStyle={() => void openStyle()}
+        onSync={() => setSyncOpen(true)}
+        onToggleShelf={() => setShelfUser(!shelfOpen)}
+      />
+      <Toaster position="bottom-right" theme="light" closeButton />
 
-      <AlertDialog open={cookOpen} onOpenChange={setCookOpen}>
+      <AlertDialog
+        open={cookOpen}
+        onOpenChange={(open) => {
+          setCookOpen(open)
+          if (open) setCookConfirm(false)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cook this into Hung Library?</AlertDialogTitle>
             <AlertDialogDescription>
-              Copies the markdown into `_hq/vault/library/{cookDomain}/`.
-              Rebuild writes Drive library/generated/. Send to cook starts a
-              nested worker that rewrites this one draft first.
+              Confirm still gates every vault and Drive write. Cancel leaves the
+              draft in inbox. Cook copies markdown into
+              `_hq/vault/library/{cookDomain}/`. Rebuild writes Drive
+              library/generated/. Send to cook starts a nested worker that
+              rewrites this one draft first.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Select value={cookDomain} onValueChange={setCookDomain}>
@@ -442,13 +488,25 @@ export function App() {
               Rebuild Hung Library
             </Label>
           </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="cook-confirm"
+              checked={cookConfirm}
+              onCheckedChange={(v) => setCookConfirm(v === true)}
+            />
+            <Label htmlFor="cook-confirm" className="font-normal">
+              I confirm writing to the vault
+              {rebuildLibrary ? " and Drive" : ""}
+            </Label>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
               type="button"
               variant="outline"
+              disabled={!cookConfirm || !draftPath}
               onClick={() => {
-                if (!draftPath) return
+                if (!draftPath || !cookConfirm) return
                 void runDraftAction("Send to cook failed.", () =>
                   api.sendAgent(draftPath, cookDomain),
                 )
@@ -457,8 +515,9 @@ export function App() {
               Send to cook
             </Button>
             <AlertDialogAction
+              disabled={!cookConfirm || !draftPath}
               onClick={() => {
-                if (!draftPath) return
+                if (!draftPath || !cookConfirm) return
                 void runDraftAction("Cook failed.", () =>
                   api.cookToBook({
                     path: draftPath,
@@ -474,7 +533,13 @@ export function App() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={makeOpen} onOpenChange={setMakeOpen}>
+      <AlertDialog
+        open={makeOpen}
+        onOpenChange={(open) => {
+          setMakeOpen(open)
+          if (open) setMakeConfirm(false)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Make a standalone EPUB?</AlertDialogTitle>
@@ -483,11 +548,22 @@ export function App() {
               library/generated/. Cover providers live under Ingest.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="make-confirm"
+              checked={makeConfirm}
+              onCheckedChange={(v) => setMakeConfirm(v === true)}
+            />
+            <Label htmlFor="make-confirm" className="font-normal">
+              I confirm writing to Drive
+            </Label>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              disabled={!makeConfirm || !draftPath}
               onClick={() => {
-                if (!draftPath) return
+                if (!draftPath || !makeConfirm) return
                 void runDraftAction("Make EPUB failed.", () =>
                   api.makeBook({
                     path: draftPath,

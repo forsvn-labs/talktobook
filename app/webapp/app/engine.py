@@ -3,12 +3,13 @@
 Reuses the pure functions from the existing CLI engine (``scripts/build.py``)
 and adds the things the web product needs that the CLI doesn't:
 
-  - owned-content front matter (the CLI's "unofficial reading edition"
-    disclaimer is for ripping *other* people's videos; this product targets a
-    creator's *own* content, attested by an ownership checkbox)
   - .srt / .vtt subtitle normalization
   - custom accent colour and cover
   - extra formats: PDF (WeasyPrint) and Kindle AZW3 (Calibre)
+
+Markdown and EPUB still use the CLI attribution block. The ownership checkbox
+is the right to convert; the edition stays unofficial and claims no copyright
+over the source.
 
 Format generation is capability-detected and best-effort: EPUB is always
 produced; PDF/AZW3 are produced only where their tool is on PATH.
@@ -17,10 +18,12 @@ produced; PDF/AZW3 are produced only where their tool is on PATH.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -241,23 +244,34 @@ def assemble_book(
     *,
     watermark: bool,
 ) -> str:
-    """Compose the Markdown book: title + byline front matter, then body.
+    """Compose the Markdown book with the CLI attribution front-matter.
 
-    Owned-content framing. The user attests ownership, so there is no
-    "unofficial edition / no-copyright-claim" disclaimer (that's the CLI's job
-    for third-party rips).
+    The ownership checkbox is the right to convert. The edition itself is
+    unofficial and claims no copyright over the source.
     """
-    lines = [f"# {title}", ""]
-    if author:
-        lines.append(f"*by {author}*")
-        lines.append("")
-    if source_url:
-        lines.append(f"Adapted from the original recording: {source_url}")
-        lines.append("")
-    md = "\n".join(lines) + "\n" + body.strip() + "\n"
+    creators = (author or "").strip() or t2e.UNKNOWN_CREATORS
+    md = t2e.assemble_book(title, creators, source_url, body)
     if watermark:
         md += WATERMARK
     return md
+
+
+def preview_markdown(
+    raw_text: str,
+    fmt: str,
+    title: str,
+    author: str | None,
+    source_url: str | None = None,
+    *,
+    body: str | None = None,
+) -> str:
+    """Clean a transcript into the attributed Markdown edition, without pandoc."""
+    text = normalize_input(raw_text, fmt)
+    if body is None:
+        body = t2e.clean_transcript(text)
+    if not body.strip():
+        raise EngineError("No readable text found in the transcript.")
+    return assemble_book(title, author, source_url, body, watermark=False)
 
 
 # ---------------------------------------------------------------------------
@@ -344,19 +358,34 @@ def _run(cmd: list[str]) -> None:
 
 
 def build_epub(md_path: Path, out_path: Path, css_path: Path, title: str,
-               author: str | None, cover_path: Path | None) -> None:
-    cmd = [
-        "pandoc", str(md_path), "-o", str(out_path),
-        "--metadata", f"title={title}",
-        "--metadata", f"author={author or ''}",
-        "--metadata", "lang=en",
-        "--epub-title-page=false",
-        "--toc", "--toc-depth=1", "--split-level=2",
-        "--css", str(css_path),
-    ]
-    if cover_path:
-        cmd += ["--epub-cover-image", str(cover_path)]
-    _run(cmd)
+               author: str | None, cover_path: Path | None,
+               source_url: str | None = None) -> None:
+    src_md = md_path.read_text(encoding="utf-8")
+    pandoc_md = "\n".join(
+        line for line in src_md.split("\n")
+        if line.strip() not in (t2e.ATTRIBUTION_START, t2e.ATTRIBUTION_END)
+    )
+    rights = t2e.build_rights(author or t2e.UNKNOWN_CREATORS, source_url)
+    fd, tmp_md = tempfile.mkstemp(prefix="t2b-", suffix=".md")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(pandoc_md)
+        cmd = [
+            "pandoc", tmp_md, "-o", str(out_path),
+            "--metadata", f"title={title}",
+            "--metadata", f"author={author or t2e.UNKNOWN_CREATORS}",
+            "--metadata", "lang=en",
+            "--metadata", f"rights={rights}",
+            "--metadata", f"description={rights}",
+            "--epub-title-page=false",
+            "--toc", "--toc-depth=1", "--split-level=2",
+            "--css", str(css_path),
+        ]
+        if cover_path:
+            cmd += ["--epub-cover-image", str(cover_path)]
+        _run(cmd)
+    finally:
+        Path(tmp_md).unlink(missing_ok=True)
 
 
 def build_pdf(md_path: Path, out_path: Path, css_path: Path, title: str,
@@ -415,7 +444,9 @@ def generate(
     if not body.strip():
         raise EngineError("No readable text found in the transcript.")
 
-    md = assemble_book(title, author, source_url, body, watermark=False)
+    md = preview_markdown(
+        raw_text, fmt, title, author, source_url, body=body,
+    )
     md_path = job_dir / "book.md"
     md_path.write_text(md, encoding="utf-8")
 
@@ -433,12 +464,16 @@ def generate(
     outputs: dict[str, str] = {}
     epub_path = job_dir / "book.epub"
     try:
-        build_epub(md_path, epub_path, css_path, title, author, cover_path)
+        build_epub(
+            md_path, epub_path, css_path, title, author, cover_path, source_url,
+        )
     except EngineError:
         # A bad/unreadable custom cover shouldn't fail the whole build — retry
         # without it. Re-raise if it wasn't the cover.
         if cover_path is not None:
-            build_epub(md_path, epub_path, css_path, title, author, None)
+            build_epub(
+                md_path, epub_path, css_path, title, author, None, source_url,
+            )
         else:
             raise
     outputs["epub"] = epub_path.name

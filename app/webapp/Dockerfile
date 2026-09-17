@@ -1,15 +1,22 @@
 # TalkToBook — Python engine needs pandoc (system binary) + WeasyPrint's
 # native libs, and optionally Calibre for Kindle AZW3. A container is the
-# smallest thing that makes pandoc + Python coexist (Railway / Render / Fly).
+# smallest thing that makes pandoc + Python coexist. This image is for local
+# reproduction. Do not treat talktobook.com as ours; there is no host deploy
+# in this change.
+
+FROM oven/bun:1 AS ui
+WORKDIR /ui
+COPY webapp/ui/package.json webapp/ui/bun.lock* ./
+RUN bun install
+COPY webapp/ui ./
+RUN bun run build
+
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PORT=8000
 
-# pandoc (EPUB) + WeasyPrint runtime libs (PDF) + fonts are always installed.
-# Calibre (Kindle AZW3) is large. Gate it behind a build arg so the default
-# image stays lean. Enable with --build-arg INSTALL_CALIBRE=true.
 ARG INSTALL_CALIBRE=false
 RUN apt-get update && apt-get install -y --no-install-recommends \
       pandoc \
@@ -24,12 +31,10 @@ WORKDIR /srv
 COPY webapp/requirements.txt /srv/requirements.txt
 RUN pip install -r /srv/requirements.txt
 
-# The web layer imports scripts/build.py as a library, so copy both.
 COPY scripts /srv/scripts
 COPY webapp /srv/webapp
+COPY --from=ui /ui/dist /srv/webapp/ui/dist
 
-# Raster deploy assets are derived from the tracked text-only generator. Keep
-# them out of Git and recreate them in every image.
 RUN python /srv/webapp/scripts/gen-social-assets.py
 
 WORKDIR /srv/webapp

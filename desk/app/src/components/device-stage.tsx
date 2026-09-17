@@ -203,6 +203,8 @@ export function DeviceStage({
         <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
           {d.short}
           {current ? ` · ${current.title}` : ""}
+          {current?.mode === "spine" ? " · spine preview" : ""}
+          {current?.mode === "draft" ? " · draft" : ""}
           {pageInfo ? ` · ${pageInfo}` : ""}
         </p>
         {status && (
@@ -214,7 +216,7 @@ export function DeviceStage({
 
       <div
         ref={slotRef}
-        className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_center,var(--desk-glow),transparent_55%),linear-gradient(180deg,oklch(0.14_0.01_260),oklch(0.12_0.01_260))] p-3"
+        className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden device-slot p-3"
       >
         <div
           className="relative shrink-0 overflow-hidden"

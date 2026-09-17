@@ -1,0 +1,364 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* TalkToBook DESIGN.md — quiet publishing desk. Paper, ink, oxblood mark. */
+:root {
+  color-scheme: light;
+  --paper: #f7f0e5;
+  --paper-2: #efe5d8;
+  --panel: #fffaf2;
+  --ink: #1e1a17;
+  --ink-2: #514842;
+  --muted-copy: #6f655e;
+  --rule: #d9cdbd;
+  --oxblood: #7f1d1d;
+  --oxblood-2: #4b1515;
+  --oxblood-soft: #ead7cf;
+  --error: #9b1c1c;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--panel);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--muted-copy);
+  --accent: var(--oxblood-soft);
+  --accent-foreground: var(--oxblood-2);
+  --destructive: var(--error);
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: var(--oxblood);
+  --radius: 0.375rem;
+}
+
+@theme inline {
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-oxblood: var(--oxblood);
+  --color-oxblood-2: var(--oxblood-2);
+  --color-oxblood-soft: var(--oxblood-soft);
+  --color-rule: var(--rule);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+  a {
+    color: var(--oxblood);
+  }
+  a:hover {
+    color: var(--oxblood-2);
+  }
+  :focus-visible {
+    outline: 2px solid var(--oxblood);
+    outline-offset: 3px;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 0;
+}
+.skip:focus {
+  left: 12px;
+  z-index: 50;
+  background: var(--panel);
+  padding: 8px 12px;
+}
+
+.wordmark {
+  position: relative;
+  display: inline-block;
+  color: var(--ink);
+  text-decoration: none;
+}
+.wordmark::after {
+  content: "";
+  display: block;
+  width: 1.35rem;
+  height: 2px;
+  margin-top: 0.28rem;
+  background: var(--oxblood);
+}
+
+.book-stage {
+  background: var(--paper-2);
+}
+
+.book-leaf {
+  position: relative;
+  z-index: 1;
+  max-width: 38rem;
+  margin-inline: auto;
+  padding: 2.4rem 2.1rem 2.8rem;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  box-shadow:
+    2px 0 0 var(--paper-2),
+    3px 0 0 var(--rule),
+    8px 16px 36px -20px rgb(30 26 23 / 0.42);
+}
+.book-leaf::before,
+.book-leaf::after {
+  content: "";
+  position: absolute;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  z-index: -1;
+}
+.book-leaf::before {
+  inset: 7px -6px -6px 10px;
+}
+.book-leaf::after {
+  inset: 3px -3px -3px 5px;
+  background: var(--panel);
+}
+.book-leaf .running {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-copy);
+}
+.book-leaf .mark {
+  width: 2.25rem;
+  height: 1px;
+  margin: 0.7rem 0 1.35rem;
+  background: var(--oxblood);
+}
+.book-leaf .edition-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+.book-leaf .byline {
+  margin: 0.45rem 0 1.35rem;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  color: var(--ink-2);
+}
+.book-leaf p {
+  margin: 0 0 1em;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  line-height: 1.72;
+  text-wrap: pretty;
+}
+.book-leaf .speaker {
+  display: block;
+  margin-bottom: 0.28em;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--oxblood);
+}
+.book-leaf blockquote {
+  position: relative;
+  margin: 1.1em 0;
+  padding-left: 1.35rem;
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-style: italic;
+  line-height: 1.65;
+}
+.book-leaf blockquote::before {
+  content: "\201C";
+  position: absolute;
+  left: -0.05rem;
+  top: -0.08em;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+  font-style: normal;
+  color: var(--oxblood);
+}
+.book-leaf .folio {
+  margin-top: 1.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-copy);
+}
+
+.spine-book {
+  display: grid;
+  grid-template-columns: 0.7rem 1fr;
+  min-height: 13.5rem;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  box-shadow: 7px 12px 28px -18px rgb(30 26 23 / 0.45);
+}
+.spine-book .spine {
+  background: var(--ink);
+}
+.spine-book[data-mark="oxblood"] .spine {
+  background: var(--oxblood);
+}
+.spine-book[data-mark="ink-2"] .spine {
+  background: var(--ink-2);
+}
+.spine-book .leaf {
+  display: flex;
+  min-height: 13.5rem;
+  flex-direction: column;
+  padding: 1.05rem 1.1rem 1.15rem;
+}
+.spine-book .kind {
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--oxblood);
+}
+.spine-book .title {
+  margin-top: 0.7rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.spine-book .author {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+.spine-book .blurb {
+  margin-top: auto;
+  padding-top: 0.9rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted-copy);
+}
+.spine-book .open {
+  margin-top: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--oxblood);
+}
+.spine-book[data-size="short"] .leaf,
+.spine-book[data-size="short"] {
+  min-height: 12rem;
+}
+.spine-book[data-size="tall"] .leaf,
+.spine-book[data-size="tall"] {
+  min-height: 15rem;
+}
+
+.desk-samples {
+  background:
+    linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 100%);
+}
+
+.transcript-dump {
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .book-leaf {
+    animation: leaf-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes leaf-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-leaf {
+    animation: none;
+  }
+  .spine-book {
+    transition: none;
+  }
+}

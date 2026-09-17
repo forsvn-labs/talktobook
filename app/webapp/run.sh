@@ -23,4 +23,8 @@ export PATH="$PWD/.venv/bin:$PATH"
 # Recreate ignored deploy assets from their tracked text-only source.
 python scripts/gen-social-assets.py
 
+if command -v bun >/dev/null 2>&1; then
+  (cd ui && bun install && bun run build)
+fi
+
 exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --reload
