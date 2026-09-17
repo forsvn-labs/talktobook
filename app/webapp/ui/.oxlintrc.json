@@ -5,7 +5,7 @@
   "plugins": ["react", "typescript", "oxc"],
   "settings": {
     "shadcn": {
-      "note": "TalkToBook public UI: DESIGN.md paper #F7F0E5, ink #1E1A17, oxblood accent #7F1D1D as a mark not a hero fill. Newsreader for display, Instrument Sans for UI. No neon, lime, purple gradients, or glassmorphism."
+      "note": "TalkToBook public UI: DESIGN.md paper #F7F0E5, ink #1E1A17, panel #FFFAF2, oxblood #7F1D1D as a mark (links, checks, hairlines) not a fill. Newsreader display, Instrument Sans UI. First viewport is converter + reading proof. No neon, lime, purple gradients, or glassmorphism."
     }
   },
   "rules": {

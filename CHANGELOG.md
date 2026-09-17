@@ -1,5 +1,14 @@
 # TalkToBook changelog
 
+## 2026-09-17 - Editorial workbench (unshipped)
+
+- Public `/` is a publishing desk: first viewport is the converter panel
+  (`#FFFAF2`) beside a Newsreader page proof. Oxblood is a mark (links, checks,
+  hairlines, speaker names, selected tabs). Sample editions are spines on the
+  desk, not three identical cards. FastAPI contract unchanged.
+- Desk chrome is paper/ink with oxblood marks. Resizable shelf + device is
+  still one view. Confirm still gates vault and Drive writes.
+
 ## 2026-09-17 - shadcn converter and desk
 
 - Public webapp is a shadcn React workbench on the existing FastAPI API

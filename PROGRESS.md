@@ -20,13 +20,14 @@ FastAPI still serves the engine.
   the byte copy for `forsvn-labs/talktobook`. The cook pipeline test
   fails if they drift.
 - Public converter is a shadcn React workbench talking to the existing FastAPI
-  endpoints. Sample editions and Markdown reading preview are wired. Generated
-  Markdown/EPUB use the CLI unofficial attribution block. No host deploy.
-  `talktobook.com` is not ours.
+  endpoints. The first viewport is converter (left / top) plus a Newsreader
+  reading proof (right). Sample editions sit on the desk as spines, not identical
+  cards. Generated Markdown/EPUB use the CLI unofficial attribution block. No
+  host deploy. `talktobook.com` is not ours.
 - Desk, TalkToBook ingest, spine preview, copy-only Kobo sync, Style sheet,
   Kindle Paperwhite frame, and Cook-to-book are on `main` (#88, #90, #91, #92),
-  deepened on `feat/shadcn-ui-and-functionality`. Confirm still gates every vault
-  and Drive write.
+  deepened on `feat/shadcn-ui-and-functionality`. Desk chrome is paper/ink with
+  oxblood marks. Confirm still gates every vault and Drive write.
 - v1 Sync copies new files and skips identical ones. A replacement (same name,
   different bytes) aborts; that still needs the Kobo sqlite procedure, not a
   desk button.

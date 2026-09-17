@@ -5,7 +5,7 @@
   "plugins": ["react", "typescript", "oxc"],
   "settings": {
     "shadcn": {
-      "note": "Kobo desk DESIGN.md: dark room oklch(0.16 0.01 260), amber lamp oklch(0.78 0.09 75) as the only accent. Geist. Not a marketing page. Confirm still gates vault and Drive writes."
+      "note": "TalkToBook desk: paper #F7F0E5, ink #1E1A17, oxblood #7F1D1D as a mark (links, checks, hairlines) not a fill. Geist. One-view resizable shelf + device. Confirm still gates vault and Drive writes."
     }
   },
   "rules": {

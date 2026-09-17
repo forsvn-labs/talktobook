@@ -296,7 +296,7 @@ export function App() {
   return (
     <TooltipProvider>
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden border-b border-border bg-card/40 px-3">
+        <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden border-b border-border bg-panel px-3">
           <Button
             type="button"
             size="sm"
@@ -313,7 +313,7 @@ export function App() {
             )}
             Shelf
           </Button>
-          <div className="min-w-0 truncate text-sm font-semibold tracking-tight">
+          <div className="wordmark-mark min-w-0 truncate text-sm font-semibold tracking-tight">
             E-reader
           </div>
           <div className="hidden min-w-0 truncate text-xs text-muted-foreground md:block">
@@ -446,7 +446,7 @@ export function App() {
         onSync={() => setSyncOpen(true)}
         onToggleShelf={() => setShelfUser(!shelfOpen)}
       />
-      <Toaster position="bottom-right" theme="dark" richColors closeButton />
+      <Toaster position="bottom-right" theme="light" closeButton />
 
       <AlertDialog
         open={cookOpen}
