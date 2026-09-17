@@ -111,7 +111,6 @@ def catalog() -> list[dict]:
         item = {k: s[k] for k in ("slug", "title", "author", "kind", "blurb")}
         item["unofficial"] = True
         item["preview"] = f"/api/samples/{s['slug']}/preview"
-        item["epub"] = f"/api/sample/{s['slug']}/book.epub"
         out.append(item)
     return out
 

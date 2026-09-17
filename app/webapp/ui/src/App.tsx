@@ -52,7 +52,19 @@ function MarkdownPage({ doc }: { doc: PreviewDoc }) {
   const blocks = useMemo(() => {
     return doc.markdown
       .split(/\n{2,}/)
-      .map((chunk) => chunk.trim())
+      .map((chunk) =>
+        chunk
+          .split("\n")
+          .filter((line) => {
+            const t = line.trim()
+            return (
+              t !== "<!-- t2e:attribution:start -->" &&
+              t !== "<!-- t2e:attribution:end -->"
+            )
+          })
+          .join("\n")
+          .trim(),
+      )
       .filter(Boolean)
   }, [doc.markdown])
 
@@ -103,7 +115,7 @@ function SiteChrome({ children }: { children: React.ReactNode }) {
       <a className="skip" href="#start">
         Skip to the converter
       </a>
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:px-8">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background px-4 md:px-8">
         <a href="/" className="font-display text-lg font-semibold text-foreground no-underline">
           TalkToBook
         </a>

@@ -76,6 +76,7 @@ export function App() {
   const [cookConfirm, setCookConfirm] = useState(false)
   const [rebuildLibrary, setRebuildLibrary] = useState(true)
   const [makeOpen, setMakeOpen] = useState(false)
+  const [makeConfirm, setMakeConfirm] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [cookDomain, setCookDomain] = useState("business")
   const deskSplit = useDeskSplit()
@@ -532,7 +533,13 @@ export function App() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={makeOpen} onOpenChange={setMakeOpen}>
+      <AlertDialog
+        open={makeOpen}
+        onOpenChange={(open) => {
+          setMakeOpen(open)
+          if (open) setMakeConfirm(false)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Make a standalone EPUB?</AlertDialogTitle>
@@ -541,11 +548,22 @@ export function App() {
               library/generated/. Cover providers live under Ingest.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="make-confirm"
+              checked={makeConfirm}
+              onCheckedChange={(v) => setMakeConfirm(v === true)}
+            />
+            <Label htmlFor="make-confirm" className="font-normal">
+              I confirm writing to Drive
+            </Label>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              disabled={!makeConfirm || !draftPath}
               onClick={() => {
-                if (!draftPath) return
+                if (!draftPath || !makeConfirm) return
                 void runDraftAction("Make EPUB failed.", () =>
                   api.makeBook({
                     path: draftPath,

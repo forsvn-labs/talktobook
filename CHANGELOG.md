@@ -12,6 +12,10 @@
   copy-only Kobo sync. Ingest is paneled. Cook confirm still gates vault/Drive
   writes.
 - `@shadcn/lint` on both React UIs encodes DESIGN.md tokens.
+- Web Markdown/EPUB now carry the CLI unofficial attribution block and EPUB
+  rights metadata. Sample catalog omits EPUB links until the file exists.
+  Public header is a solid paper bar (no glass). Desk vault/Drive dialogs use
+  an explicit confirm checkbox.
 
 ## 2026-09-08 - Local converter only
 

@@ -20,8 +20,9 @@ FastAPI still serves the engine.
   the byte copy for `forsvn-labs/talktobook`. The cook pipeline test
   fails if they drift.
 - Public converter is a shadcn React workbench talking to the existing FastAPI
-  endpoints. Sample editions and Markdown reading preview are wired. No host
-  deploy. `talktobook.com` is not ours.
+  endpoints. Sample editions and Markdown reading preview are wired. Generated
+  Markdown/EPUB use the CLI unofficial attribution block. No host deploy.
+  `talktobook.com` is not ours.
 - Desk, TalkToBook ingest, spine preview, copy-only Kobo sync, Style sheet,
   Kindle Paperwhite frame, and Cook-to-book are on `main` (#88, #90, #91, #92),
   deepened on `feat/shadcn-ui-and-functionality`. Confirm still gates every vault
