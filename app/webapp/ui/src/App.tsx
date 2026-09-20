@@ -241,18 +241,42 @@ function HomePage({ config }: { config: PublicConfig | null }) {
     setStatus("generating")
     try {
       const created = await api.preview(fd)
-      setStatus("checking")
-      const polled = await api.job(created.job_id).catch(() => created)
-      setJob(polled)
-      setStatus(polled.status || "ready")
-      const preview = await api.jobPreview(created.job_id).catch(() => null)
-      if (preview) setReading(preview)
+      setJob(created)
+      setStatus(created.status || "building")
+      if (created.markdown) {
+        setReading({
+          title: created.title,
+          author: created.author,
+          markdown: created.markdown,
+          unofficial: created.unofficial,
+          word_count: created.word_count,
+        })
+      }
+      let current = created
+      const started = Date.now()
+      while (
+        !current.downloads?.epub &&
+        current.status !== "error" &&
+        Date.now() - started < 120_000
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        current = await api.job(created.job_id)
+        setJob(current)
+        setStatus(current.status || "building")
+      }
+      if (current.status === "error") {
+        throw new Error(current.error || "Could not finish the EPUB.")
+      }
+      if (!current.downloads?.epub) {
+        throw new Error("The EPUB did not finish in time. The reading proof is ready; try Generate again.")
+      }
       toast.success("Unofficial reading edition is ready.")
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not build the book."
       setError(msg)
       setStatus("error")
       toast.error(msg)
+      setBusy(false)
     }
     setBusy(false)
   }

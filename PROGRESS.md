@@ -1,6 +1,6 @@
 # TalkToBook progress
 
-Updated: 2026-09-17
+Updated: 2026-09-20
 Owner: Hung
 State: one FORSVN tree named talktobook; GitHub mirror is a local tool; no host deploy
 
@@ -24,6 +24,10 @@ FastAPI still serves the engine.
   reading proof (right). Sample editions sit on the desk as spines, not identical
   cards. Generated Markdown/EPUB use the CLI unofficial attribution block. No
   host deploy. `talktobook.com` is not ours.
+- Generate EPUB writes attributed Markdown first and builds cover+EPUB in a
+  background task. PDF/AZW3 are optional and never block that path. Sample
+  listing does not prebuild three EPUBs. Local fonts are vendored under
+  `app/webapp/static/fonts/`. `webapp/run.sh` skips stale UI/asset rebuilds.
 - Desk, TalkToBook ingest, spine preview, copy-only Kobo sync, Style sheet,
   Kindle Paperwhite frame, and Cook-to-book are on `main` (#88, #90, #91, #92),
   deepened on `feat/shadcn-ui-and-functionality`. Desk chrome is paper/ink with

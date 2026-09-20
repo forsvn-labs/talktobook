@@ -94,6 +94,26 @@ def get_manifest() -> list[dict]:
     return out
 
 
+def list_catalog() -> list[dict]:
+    """Catalog metadata plus download URLs for files already on disk.
+
+    Does not run pandoc. Homepage spines only need title/author/blurb.
+    """
+    dest = config.JOBS_DIR / "_samples"
+    out: list[dict] = []
+    for item in catalog():
+        d = dest / item["slug"]
+        merged = dict(item)
+        if (d / "book.epub").exists():
+            merged["epub"] = f"/api/sample/{item['slug']}/book.epub"
+        if (d / "cover.png").exists():
+            merged["cover"] = f"/api/sample/{item['slug']}/cover.png"
+        if (d / "book.pdf").exists():
+            merged["pdf"] = f"/api/sample/{item['slug']}/book.pdf"
+        out.append(merged)
+    return out
+
+
 def file_for(slug: str, name: str) -> Path | None:
     """Resolve a sample file path with slug/name validation."""
     if slug not in {s["slug"] for s in SAMPLES}:
@@ -102,6 +122,26 @@ def file_for(slug: str, name: str) -> Path | None:
         return None
     p = config.JOBS_DIR / "_samples" / slug / name
     return p if p.exists() else None
+
+
+def ensure_file(slug: str, name: str) -> Path | None:
+    """Build a sample EPUB/cover on first download. PDF is never built here."""
+    if slug not in {s["slug"] for s in SAMPLES}:
+        return None
+    if name not in {"book.epub", "cover.png"}:
+        return file_for(slug, name)
+    existing = file_for(slug, name)
+    if existing:
+        return existing
+    sample = next((item for item in SAMPLES if item["slug"] == slug), None)
+    if not sample:
+        return None
+    dest = config.JOBS_DIR / "_samples"
+    try:
+        _build_one(sample, dest)
+    except engine.EngineError:
+        return None
+    return file_for(slug, name)
 
 
 def catalog() -> list[dict]:

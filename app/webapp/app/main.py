@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -124,14 +124,26 @@ def _download_url(job: storage.Job, kind: str) -> str:
     return f"/d/{job.id}/{name}"
 
 
+def _job_status(job: storage.Job) -> str:
+    if (job.out_dir / "book.epub").exists() or job.outputs.get("epub"):
+        return "ready"
+    if job.status == "error":
+        return "error"
+    if (job.out_dir / "book.md").exists() or job.status == "building":
+        return "building"
+    return job.status or "empty"
+
+
 def _job_public(job: storage.Job) -> dict:
     files = {k: _download_url(job, k) for k in job.outputs}
     if (job.out_dir / "book.md").exists():
         files.setdefault("md", _download_url(job, "md"))
     if (job.out_dir / "cover.png").exists():
         files.setdefault("cover", _download_url(job, "cover"))
-    ready = bool(job.outputs)
-    return {
+    if (job.out_dir / "book.epub").exists():
+        files.setdefault("epub", _download_url(job, "epub"))
+        job.outputs.setdefault("epub", "book.epub")
+    body = {
         "job_id": job.id,
         "title": job.title,
         "author": job.author,
@@ -139,11 +151,14 @@ def _job_public(job: storage.Job) -> dict:
         "cover_prompt": job.cover_prompt,
         "preview": files,
         "downloads": files,
-        "status": "ready" if ready else "empty",
+        "status": _job_status(job),
         "formats": sorted(job.outputs.keys()),
         "unofficial": True,
         "preview_text": f"/api/job/{job.id}/preview",
     }
+    if job.error:
+        body["error"] = job.error
+    return body
 
 
 # ---------------------------------------------------------------------------
@@ -252,13 +267,8 @@ async def public_config():
 
 @app.get("/api/samples")
 async def list_samples():
-    built = samples.get_manifest()
-    by_slug = {item["slug"]: item for item in built}
-    catalog = []
-    for item in samples.catalog():
-        catalog.append({**item, **by_slug.get(item["slug"], {})})
     return {
-        "samples": catalog,
+        "samples": samples.list_catalog(),
         "unofficial": True,
         "note": "Original demo editions. Unofficial reading pages that credit fictional authors.",
     }
@@ -274,7 +284,7 @@ async def sample_preview(slug: str):
 
 @app.get("/api/sample/{slug}/{name}")
 async def sample_file(slug: str, name: str):
-    path = samples.file_for(slug, name)
+    path = samples.ensure_file(slug, name)
     if not path:
         raise HTTPException(404, "Not found.")
     media = next(
@@ -296,8 +306,46 @@ async def sample_file(slug: str, name: str):
 # Convert
 # ---------------------------------------------------------------------------
 
+def _finish_preview_job(job_id: str) -> None:
+    job = storage.load(job_id)
+    if not job:
+        return
+    try:
+        built = engine.write_epub(
+            job.out_dir,
+            title=job.title,
+            author=job.author,
+            source_url=job.source_url,
+        )
+        job.outputs.update(built["outputs"])
+        job.status = "ready"
+        job.error = ""
+        storage.save(job)
+    except engine.EngineError as exc:
+        job.status = "error"
+        job.error = str(exc)
+        storage.save(job)
+        return
+    except Exception:
+        job.status = "error"
+        job.error = "Could not finish the EPUB."
+        storage.save(job)
+        return
+    try:
+        extras = engine.write_extra_formats(
+            job.out_dir, title=job.title, author=job.author,
+        )
+        if extras:
+            job.outputs.update(extras)
+            storage.save(job)
+    except Exception:
+        # EPUB is already ready; extra formats stay best-effort.
+        pass
+
+
 @app.post("/api/preview")
 async def create_preview(
+    background_tasks: BackgroundTasks,
     title: str = Form(""),
     source_url: str = Form(""),
     owns: str = Form(""),
@@ -350,21 +398,37 @@ async def create_preview(
         fmt=fmt, raw_text=raw_text,
     )
     try:
-        result = await asyncio.to_thread(
-            engine.generate,
-            job.out_dir, raw_text=raw_text, fmt=fmt,
-            title=title_d, author=author_d,
+        preview = await asyncio.to_thread(
+            engine.write_preview,
+            job.out_dir,
+            raw_text=raw_text,
+            fmt=fmt,
+            title=title_d,
+            author=author_d,
             source_url=job.source_url,
         )
     except engine.EngineError as e:
+        job.status = "error"
+        job.error = str(e)
+        storage.save(job)
         raise HTTPException(422, f"Could not build the book: {e}")
 
-    job.outputs = result["outputs"]
-    job.word_count = result["word_count"]
-    job.cover_prompt = result["cover_prompt"]
-    storage.save(job)
+    markdown = preview["markdown"]
+    if "<!-- t2e:attribution:start -->" not in markdown:
+        job.status = "error"
+        job.error = "missing unofficial attribution"
+        storage.save(job)
+        raise HTTPException(422, "Could not build the book: missing unofficial attribution.")
 
-    return _job_public(job)
+    job.word_count = preview["word_count"]
+    job.cover_prompt = preview["cover_prompt"]
+    job.status = "building"
+    storage.save(job)
+    background_tasks.add_task(_finish_preview_job, job.id)
+
+    public = _job_public(job)
+    public["markdown"] = markdown
+    return public
 
 
 @app.get("/api/job/{job_id}")

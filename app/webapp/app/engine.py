@@ -12,7 +12,9 @@ is the right to convert; the edition stays unofficial and claims no copyright
 over the source.
 
 Format generation is capability-detected and best-effort: EPUB is always
-produced; PDF/AZW3 are produced only where their tool is on PATH.
+produced. PDF requires a WeasyPrint that actually imports (not merely a
+binary on PATH); AZW3 requires a working ``ebook-convert``. Extra formats
+are never built on the Generate request path.
 """
 
 from __future__ import annotations
@@ -66,15 +68,64 @@ class TranscriptFetchError(RuntimeError):
 # Capability detection
 # ---------------------------------------------------------------------------
 
+_CAPS: dict | None = None
+
+
+def reset_capabilities_cache() -> None:
+    """Drop the process-level probe cache (tests)."""
+    global _CAPS
+    _CAPS = None
+
+
+def _weasyprint_available() -> bool:
+    """True only when the weasyprint binary exists *and* the library imports.
+
+    ``shutil.which("weasyprint")`` is a false positive when the CLI is on PATH
+    but Pango/Cairo is missing and ``import weasyprint`` raises OSError.
+    Probe in a child process: a failed in-process import can SIGSEGV later.
+    """
+    if not shutil.which("weasyprint"):
+        return False
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", "import weasyprint"],
+            capture_output=True,
+            timeout=8,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0
+
+
+def _azw3_available() -> bool:
+    exe = shutil.which("ebook-convert")
+    if not exe:
+        return False
+    try:
+        proc = subprocess.run(
+            [exe, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=8,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0
+
+
 def capabilities() -> dict:
     """Which output formats this host can actually produce, right now."""
-    return {
+    global _CAPS
+    if _CAPS is not None:
+        return dict(_CAPS)
+    _CAPS = {
         "epub": bool(shutil.which("pandoc")),
-        "pdf": bool(shutil.which("pandoc") and shutil.which("weasyprint")),
-        "azw3": bool(shutil.which("ebook-convert")),
+        "pdf": bool(shutil.which("pandoc") and _weasyprint_available()),
+        "azw3": _azw3_available(),
         "cover": HAS_PILLOW,
         "youtube": HAS_YOUTUBE_TRANSCRIPT,
     }
+    return dict(_CAPS)
 
 
 # ---------------------------------------------------------------------------
@@ -419,7 +470,7 @@ def derive_metadata(raw_text: str, fmt: str, title: str | None,
     return title, ((author or "").strip() or None)
 
 
-def generate(
+def write_preview(
     job_dir: Path,
     *,
     raw_text: str,
@@ -427,14 +478,8 @@ def generate(
     title: str,
     author: str | None,
     source_url: str | None,
-    accent: str = BRAND_ACCENT,
-    cover_image: Path | None = None,
 ) -> dict:
-    """Build the book for a job. Returns a dict of produced files + metadata.
-
-    EPUB always. PDF and Kindle AZW3 when those tools exist. Optional custom
-    accent and cover image.
-    """
+    """Normalize, clean, and write attributed ``book.md``. No pandoc."""
     job_dir.mkdir(parents=True, exist_ok=True)
     text = normalize_input(raw_text, fmt)
     if not text.strip():
@@ -449,6 +494,29 @@ def generate(
     )
     md_path = job_dir / "book.md"
     md_path.write_text(md, encoding="utf-8")
+    return {
+        "title": title,
+        "author": author,
+        "markdown": md,
+        "cover_prompt": cover_prompt(title, author),
+        "word_count": len(body.split()),
+    }
+
+
+def write_epub(
+    job_dir: Path,
+    *,
+    title: str,
+    author: str | None,
+    source_url: str | None,
+    accent: str = BRAND_ACCENT,
+    cover_image: Path | None = None,
+) -> dict:
+    """Write CSS, cover, and EPUB from an existing ``book.md``."""
+    job_dir = Path(job_dir)
+    md_path = job_dir / "book.md"
+    if not md_path.exists():
+        raise EngineError("Preview Markdown is missing; cannot build EPUB.")
 
     css_path = job_dir / "style.css"
     css_path.write_text(css_for(accent), encoding="utf-8")
@@ -461,7 +529,6 @@ def generate(
         if render_cover(title, author, cp, accent=accent):
             cover_path = cp
 
-    outputs: dict[str, str] = {}
     epub_path = job_dir / "book.epub"
     try:
         build_epub(
@@ -476,28 +543,76 @@ def generate(
             )
         else:
             raise
-    outputs["epub"] = epub_path.name
+    return {"outputs": {"epub": epub_path.name}}
 
+
+def write_extra_formats(
+    job_dir: Path,
+    *,
+    title: str,
+    author: str | None,
+) -> dict:
+    """Best-effort PDF/AZW3. Never call this on the Generate request path."""
+    job_dir = Path(job_dir)
+    md_path = job_dir / "book.md"
+    css_path = job_dir / "style.css"
+    epub_path = job_dir / "book.epub"
+    outputs: dict[str, str] = {}
     caps = capabilities()
-    if caps["pdf"]:
+    if caps["pdf"] and md_path.exists() and css_path.exists():
         try:
             pdf_path = job_dir / "book.pdf"
             build_pdf(md_path, pdf_path, css_path, title, author)
             outputs["pdf"] = pdf_path.name
         except EngineError:
             pass
-    if caps["azw3"]:
+    if caps["azw3"] and epub_path.exists():
         try:
             azw3_path = job_dir / "book.azw3"
             build_azw3(epub_path, azw3_path)
             outputs["azw3"] = azw3_path.name
         except EngineError:
             pass
+    return outputs
 
+
+def generate(
+    job_dir: Path,
+    *,
+    raw_text: str,
+    fmt: str,
+    title: str,
+    author: str | None,
+    source_url: str | None,
+    accent: str = BRAND_ACCENT,
+    cover_image: Path | None = None,
+) -> dict:
+    """Build Markdown + cover + EPUB. PDF/AZW3 are not on this path.
+
+    Optional extra formats belong off the request thread via
+    ``write_extra_formats`` after EPUB is persisted.
+    """
+    preview = write_preview(
+        job_dir,
+        raw_text=raw_text,
+        fmt=fmt,
+        title=title,
+        author=author,
+        source_url=source_url,
+    )
+    built = write_epub(
+        job_dir,
+        title=title,
+        author=author,
+        source_url=source_url,
+        accent=accent,
+        cover_image=cover_image,
+    )
     return {
-        "title": title,
-        "author": author,
-        "outputs": outputs,
-        "cover_prompt": cover_prompt(title, author),
-        "word_count": len(body.split()),
+        "title": preview["title"],
+        "author": preview["author"],
+        "outputs": built["outputs"],
+        "cover_prompt": preview["cover_prompt"],
+        "word_count": preview["word_count"],
+        "markdown": preview["markdown"],
     }
