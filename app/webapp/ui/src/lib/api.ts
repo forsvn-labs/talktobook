@@ -28,6 +28,8 @@ export type JobResult = {
   formats: string[]
   unofficial: boolean
   preview_text: string
+  markdown?: string
+  error?: string
 }
 
 export type SampleItem = {

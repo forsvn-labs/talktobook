@@ -26,6 +26,8 @@ class Job:
     outputs: dict = field(default_factory=dict)
     word_count: int = 0
     cover_prompt: str = ""
+    status: str = "empty"
+    error: str = ""
     created_at: float = field(default_factory=lambda: time.time())
 
     @property

@@ -1,5 +1,13 @@
 # TalkToBook changelog
 
+## Unreleased
+
+- Generate EPUB no longer waits on a dead WeasyPrint PDF/AZW3 path. `capabilities()["pdf"]` is true only when WeasyPrint actually imports.
+- Sample desk listing is catalog-only; sample EPUBs build on first download.
+- Paste/upload returns attributed Markdown immediately and finishes the EPUB in the background.
+- `webapp/run.sh` skips social-asset and UI rebuilds when outputs are newer than their sources.
+- Local converter loads self-hosted Newsreader, Instrument Sans, and JetBrains Mono (OFL latin woff2) instead of render-blocking Google Fonts. Latin subsets declare unicode-range so non-latin proof text falls back to Georgia/system-ui.
+
 ## 2026-09-17 - Editorial workbench (unshipped)
 
 - Public `/` is a publishing desk: first viewport is the converter panel
