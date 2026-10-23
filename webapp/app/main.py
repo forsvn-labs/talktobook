@@ -114,7 +114,7 @@ def detect_format(text: str, filename: str | None) -> str:
         if ext in config.ALLOWED_EXTS:
             return "vtt" if ext == "vtt" else ext
     # Auto-detect subtitle paste by its timecode arrows.
-    if text.count("-->") >= 2:
+    if re.search(r"\d{1,2}:\d{2}(?::\d{2})?[.,]\d{3}\s*-->", text):
         return "vtt"
     return "txt"
 
@@ -125,24 +125,29 @@ def _download_url(job: storage.Job, kind: str) -> str:
 
 
 def _job_status(job: storage.Job) -> str:
-    if (job.out_dir / "book.epub").exists() or job.outputs.get("epub"):
-        return "ready"
     if job.status == "error":
         return "error"
+    if _finished_file(job.out_dir / "book.epub"):
+        return "ready"
     if (job.out_dir / "book.md").exists() or job.status == "building":
         return "building"
     return job.status or "empty"
 
 
+def _finished_file(path: Path) -> bool:
+    try:
+        return path.is_file() and path.stat().st_size > 0
+    except OSError:
+        return False
+
+
 def _job_public(job: storage.Job) -> dict:
-    files = {k: _download_url(job, k) for k in job.outputs}
-    if (job.out_dir / "book.md").exists():
-        files.setdefault("md", _download_url(job, "md"))
-    if (job.out_dir / "cover.png").exists():
-        files.setdefault("cover", _download_url(job, "cover"))
-    if (job.out_dir / "book.epub").exists():
-        files.setdefault("epub", _download_url(job, "epub"))
-        job.outputs.setdefault("epub", "book.epub")
+    files = {
+        kind: _download_url(job, kind)
+        for kind, (name, _) in DOWNLOAD_NAMES.items()
+        if kind in set(job.outputs) | {"md", "cover", "epub"}
+        and _finished_file(job.out_dir / name) and (kind != "epub" or job.status != "error")
+    }
     body = {
         "job_id": job.id,
         "title": job.title,
@@ -152,7 +157,7 @@ def _job_public(job: storage.Job) -> dict:
         "preview": files,
         "downloads": files,
         "status": _job_status(job),
-        "formats": sorted(job.outputs.keys()),
+        "formats": sorted(files),
         "unofficial": True,
         "preview_text": f"/api/job/{job.id}/preview",
     }
@@ -247,13 +252,13 @@ async def faq_md() -> Response:
 
 
 @app.get("/healthz")
-async def healthz():
+def healthz():
     """Liveness/readiness probe for the host platform."""
     return {"status": "ok", "capabilities": engine.capabilities()}
 
 
 @app.get("/api/config")
-async def public_config():
+def public_config():
     return {
         "app_name": config.APP_NAME,
         "capabilities": engine.capabilities(),
@@ -275,7 +280,7 @@ async def list_samples():
 
 
 @app.get("/api/samples/{slug}/preview")
-async def sample_preview(slug: str):
+def sample_preview(slug: str):
     data = samples.preview(slug)
     if not data:
         raise HTTPException(404, "Unknown sample.")
@@ -283,7 +288,7 @@ async def sample_preview(slug: str):
 
 
 @app.get("/api/sample/{slug}/{name}")
-async def sample_file(slug: str, name: str):
+def sample_file(slug: str, name: str):
     path = samples.ensure_file(slug, name)
     if not path:
         raise HTTPException(404, "Not found.")
@@ -364,7 +369,7 @@ async def create_preview(
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         if ext not in config.ALLOWED_EXTS:
             raise HTTPException(400, f"Unsupported file type .{ext}. Use: {', '.join(sorted(config.ALLOWED_EXTS))}.")
-        data = await file.read()
+        data = await file.read(config.MAX_UPLOAD_BYTES + 1)
         if len(data) > config.MAX_UPLOAD_BYTES:
             raise HTTPException(400, "File too large.")
         raw_text = data.decode("utf-8", errors="replace")
@@ -470,7 +475,8 @@ async def download(job_id: str, name: str):
         raise HTTPException(404, "Not found.")
 
     path = job.out_dir / name
-    if not path.exists():
+    kind = next(k for k, (filename, _) in DOWNLOAD_NAMES.items() if filename == name)
+    if kind not in _job_public(job)["downloads"]:
         raise HTTPException(404, "Not found.")
     media = next((m for n, m in DOWNLOAD_NAMES.values() if n == name), "application/octet-stream")
     safe_title = re.sub(r"[^\w\- ]", "", job.title)[:60].strip() or "book"
