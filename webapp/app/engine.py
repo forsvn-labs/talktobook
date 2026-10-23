@@ -26,6 +26,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import contextmanager
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -37,6 +39,8 @@ import build as t2e  # noqa: E402  (clean_transcript, detect_speakers, etc.)
 
 BRAND_ACCENT = "#7F1D1D"
 BRAND_INK = "#0C1211"
+CONVERTER_TIMEOUT_SECONDS = 120
+_COVER_WORKERS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="t2b-cover")
 # Credit is never silently dropped: when no creator can be detected, the byline
 # degrades to this rather than vanishing. The author is never user-editable —
 # this product credits the original creators of the content.
@@ -395,21 +399,85 @@ def cover_prompt(title: str, author: str | None) -> str:
     return t2e.cover_prompt(title, author or "")
 
 
+def _job_cover(title: str, author: str | None, destination: Path, accent: str) -> Path | None:
+    """Publish only a complete PNG; two workers bound cover memory and threads."""
+    fd, name = tempfile.mkstemp(prefix=".cover-", suffix=".png", dir=destination.parent)
+    os.close(fd)
+    staged = Path(name)
+    try:
+        if not render_cover(title, author, staged, accent=accent):
+            return None
+        staged.replace(destination)
+        return destination
+    finally:
+        staged.unlink(missing_ok=True)
+
+
 # ---------------------------------------------------------------------------
 # Format builders
 # ---------------------------------------------------------------------------
 
 def _run(cmd: list[str]) -> None:
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=CONVERTER_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as e:
+        raise EngineError(f"{cmd[0]} timed out") from e
     except FileNotFoundError as e:
         raise EngineError(f"{cmd[0]} not installed") from e
     if r.returncode != 0:
         raise EngineError(f"{cmd[0]} failed: {(r.stderr or r.stdout).strip()[:600]}")
 
 
+@contextmanager
+def _text_document(md_path: Path, metadata: dict[str, str]):
+    """Parse untrusted text in a sandbox before a writer sees trusted assets.
+
+    CommonMark produces no arbitrary style attributes or document metadata.
+    Remove raw HTML and image requests from its AST before writing the edition.
+    User metadata is inserted as strings, never parsed as Markdown.
+    """
+    fd, name = tempfile.mkstemp(prefix="t2b-", suffix=".json")
+    os.close(fd)
+    document = Path(name)
+    try:
+        _run([
+            "pandoc", str(md_path), "--from=commonmark-raw_html", "--to=json",
+            "--sandbox", "-o", str(document),
+        ])
+        ast = _text_ast(json.loads(document.read_text(encoding="utf-8")))
+        ast["meta"] = {key: {"t": "MetaString", "c": value} for key, value in metadata.items()}
+        document.write_text(json.dumps(ast), encoding="utf-8")
+        yield document
+    finally:
+        document.unlink(missing_ok=True)
+
+
+def _text_ast(value):
+    """Keep text/formatting; never send body resources or raw markup to writers."""
+    if isinstance(value, dict):
+        return {key: _text_ast(child) for key, child in value.items()}
+    if not isinstance(value, list):
+        return value
+    result = []
+    for node in value:
+        if isinstance(node, dict):
+            kind = node.get("t")
+            if kind in {"RawBlock", "RawInline"}:
+                continue
+            unsafe_link = False
+            if kind == "Link":
+                target = re.sub(r"[\x00-\x20\x7f]", "", node["c"][2][0])
+                scheme = re.match(r"^([A-Za-z][A-Za-z0-9+.-]*):", target)
+                unsafe_link = bool(scheme and scheme[1].lower() not in {"http", "https", "mailto"})
+            if kind == "Image" or unsafe_link:
+                result.extend(_text_ast(node["c"][1]))
+                continue
+        result.append(_text_ast(node))
+    return result
+
+
 def build_epub(md_path: Path, out_path: Path, css_path: Path, title: str,
-               author: str | None, cover_path: Path | None,
+               author: str | None, cover_path: Path | Future[Path | None] | None,
                source_url: str | None = None) -> None:
     src_md = md_path.read_text(encoding="utf-8")
     pandoc_md = "\n".join(
@@ -418,36 +486,39 @@ def build_epub(md_path: Path, out_path: Path, css_path: Path, title: str,
     )
     rights = t2e.build_rights(author or t2e.UNKNOWN_CREATORS, source_url)
     fd, tmp_md = tempfile.mkstemp(prefix="t2b-", suffix=".md")
+    fd_out, staged_name = tempfile.mkstemp(prefix=".book-", suffix=".epub", dir=out_path.parent)
+    os.close(fd_out)
+    staged = Path(staged_name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(pandoc_md)
-        cmd = [
-            "pandoc", tmp_md, "-o", str(out_path),
-            "--metadata", f"title={title}",
-            "--metadata", f"author={author or t2e.UNKNOWN_CREATORS}",
-            "--metadata", "lang=en",
-            "--metadata", f"rights={rights}",
-            "--metadata", f"description={rights}",
-            "--epub-title-page=false",
-            "--toc", "--toc-depth=1", "--split-level=2",
-            "--css", str(css_path),
-        ]
-        if cover_path:
-            cmd += ["--epub-cover-image", str(cover_path)]
-        _run(cmd)
+        metadata = {"title": title, "author": author or t2e.UNKNOWN_CREATORS,
+                    "lang": "en", "rights": rights, "description": rights}
+        with _text_document(Path(tmp_md), metadata) as document:
+            cover = cover_path.result(timeout=CONVERTER_TIMEOUT_SECONDS) if isinstance(cover_path, Future) else cover_path
+            cmd = [
+                "pandoc", str(document), "--from=json", "-o", str(staged),
+                "--epub-title-page=false", "--toc", "--toc-depth=1", "--split-level=2",
+                "--css", str(css_path),
+            ]
+            if cover:
+                cmd += ["--epub-cover-image", str(cover)]
+            _run(cmd)
+        if staged.stat().st_size == 0:
+            raise EngineError("pandoc produced an empty EPUB")
+        staged.replace(out_path)
     finally:
         Path(tmp_md).unlink(missing_ok=True)
+        staged.unlink(missing_ok=True)
 
 
 def build_pdf(md_path: Path, out_path: Path, css_path: Path, title: str,
               author: str | None) -> None:
-    _run([
-        "pandoc", str(md_path), "-o", str(out_path),
-        "--pdf-engine=weasyprint",
-        "--metadata", f"title={title}",
-        "--metadata", f"author={author or ''}",
-        "--css", str(css_path),
-    ])
+    with _text_document(md_path, {"title": title, "author": author or ""}) as document:
+        _run([
+            "pandoc", str(document), "--from=json", "-o", str(out_path),
+            "--pdf-engine=weasyprint", "--css", str(css_path),
+        ])
 
 
 def build_azw3(epub_path: Path, out_path: Path) -> None:
@@ -521,13 +592,14 @@ def write_epub(
     css_path = job_dir / "style.css"
     css_path.write_text(css_for(accent), encoding="utf-8")
 
-    cover_path: Path | None = None
+    cover_path: Path | Future[Path | None] | None = None
     if cover_image and Path(cover_image).exists():
         cover_path = Path(cover_image)
     else:
         cp = job_dir / "cover.png"
-        if render_cover(title, author, cp, accent=accent):
-            cover_path = cp
+        # Render while the independent sandboxed parser runs. The writer waits
+        # for a complete cover before it builds the EPUB.
+        cover_path = _COVER_WORKERS.submit(_job_cover, title, author, cp, accent)
 
     epub_path = job_dir / "book.epub"
     try:

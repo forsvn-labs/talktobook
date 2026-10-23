@@ -65,24 +65,32 @@ UNKNOWN_CREATORS = "the original creators"
 
 def extract_video_id(url: str) -> str | None:
     """Extract YouTube video ID from various URL formats."""
-    if re.fullmatch(r"[\w-]{11}", url):
+    url = url.strip()
+    video_id_pattern = r"[A-Za-z0-9_-]{11}"
+    if re.fullmatch(video_id_pattern, url):
         return url
 
-    parsed = urlparse(url)
-    host = parsed.hostname or ""
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower()
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https"}:
+        return None
 
-    if "youtube.com" in host:
+    video_id = None
+    if host in {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com",
+                "youtube-nocookie.com", "www.youtube-nocookie.com"}:
         qs = parse_qs(parsed.query)
-        if "v" in qs:
-            return qs["v"][0]
-        parts = parsed.path.strip("/").split("/")
-        if len(parts) >= 2 and parts[0] in ("embed", "shorts", "v"):
-            return parts[1]
-
-    if "youtu.be" in host:
-        return parsed.path.strip("/").split("/")[0]
-
-    return None
+        if parsed.path.rstrip("/") == "/watch" and "v" in qs:
+            video_id = qs["v"][0]
+        else:
+            parts = parsed.path.strip("/").split("/")
+            if len(parts) == 2 and parts[0] in ("embed", "shorts", "v"):
+                video_id = parts[1]
+    elif host in {"youtu.be", "www.youtu.be"}:
+        video_id = parsed.path.strip("/")
+    return video_id if video_id and re.fullmatch(video_id_pattern, video_id) else None
 
 
 def is_youtube_url(text: str) -> bool:

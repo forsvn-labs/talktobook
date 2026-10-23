@@ -7,7 +7,9 @@ holds the inputs, status, and output filenames. Survives restarts.
 from __future__ import annotations
 
 import json
+import os
 import secrets
+import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -60,15 +62,30 @@ def new_job(*, title: str, author: str | None, source_url: str | None,
 
 def save(job: Job) -> None:
     job.dir.mkdir(parents=True, exist_ok=True)
-    _meta_path(job.id).write_text(json.dumps(asdict(job), indent=2), encoding="utf-8")
+    fd, name = tempfile.mkstemp(prefix=".meta-", suffix=".json", dir=job.dir)
+    os.close(fd)
+    temporary = Path(name)
+    try:
+        temporary.write_text(json.dumps(asdict(job), indent=2), encoding="utf-8")
+        temporary.replace(_meta_path(job.id))
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def load(job_id: str) -> Job | None:
     if not job_id or "/" in job_id or "\\" in job_id or ".." in job_id:
         return None
     p = _meta_path(job_id)
-    if not p.exists():
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or data.get("id") != job_id:
+            return None
+        fields = set(Job.__dataclass_fields__)
+        job = Job(**{k: v for k, v in data.items() if k in fields})
+        if not all(isinstance(v, str) for v in (job.title, job.fmt, job.raw_text, job.status, job.error)):
+            return None
+        if not isinstance(job.outputs, dict):
+            return None
+        return job
+    except (OSError, ValueError, TypeError):
         return None
-    data = json.loads(p.read_text(encoding="utf-8"))
-    fields = set(Job.__dataclass_fields__)
-    return Job(**{k: v for k, v in data.items() if k in fields})
