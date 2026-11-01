@@ -17,7 +17,7 @@ The CLI writes `book.md` and `book.epub` next to the input.
 - [VISION.md](VISION.md): intended users, outcomes, and scope.
 - [BRAIN.md](BRAIN.md): external knowledge key and authorized access.
 - [STRUCTURE.md](STRUCTURE.md): code and knowledge architecture.
-- [STATUS.md](STATUS.md): dated evidence and remaining work.
+- [PROGRESS.md](PROGRESS.md): current state, dated evidence, and remaining work.
 
 Every edition is unofficial and preserves creator attribution. Use material
 you own or have rights to. [Changelog](CHANGELOG.md) · [MIT license](LICENSE)
