@@ -2,7 +2,8 @@ import { zipSync, strToU8 } from 'fflate'
 export type BookInput = { title: string; author: string; text: string; source?: string }
 // Keep only XML 1.0 characters, including valid astral Unicode.
 // eslint-disable-next-line no-control-regex
-const xml = (s: string) => s.replace(/[^\u0009\u000a\u000d\u0020-\ud7ff\ue000-\ufffd\u{10000}-\u{10ffff}]/gu, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')
+const xmlText = (s: string) => s.replace(/[^\u0009\u000a\u000d\u0020-\ud7ff\ue000-\ufffd\u{10000}-\u{10ffff}]/gu, '')
+const xml = (s: string) => xmlText(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')
 export function cleanSource(text: string) {
  // WebVTT word timestamps belong to cue payloads, not arbitrary prose.
  // Limit cleanup to valid cue blocks so literal examples in TXT/Markdown survive.
@@ -21,10 +22,10 @@ export function cleanSource(text: string) {
 }
 export function makeBook(input: BookInput) {
  if(input.text.length>2_000_000)throw new Error('Use a source smaller than 2 million characters.')
- const text=cleanSource(input.text)
+ const text=cleanSource(xmlText(input.text))
  if(!text)throw new Error('Paste text or choose a text file first.')
- const title=input.title.trim().slice(0,180)||'Reading edition'
- const author=input.author.trim().slice(0,180)||'Source creator not specified'
+ const title=xmlText(input.title).trim().slice(0,180)||'Reading edition'
+ const author=xmlText(input.author).trim().slice(0,180)||'Source creator not specified'
  const source=(input.source??'').trim().slice(0,2048)
  const attribution=`Unofficial reading edition. Source creator: ${author}.${source?' Source: '+source:''}`
  const headings: {id:string;title:string}[]=[]

@@ -1,5 +1,5 @@
 type Writer = { write(data: Blob): Promise<void>; close(): Promise<void>; abort(): Promise<void> }
-type Handle = { getFile(): Promise<{ size: number }>; createWritable(): Promise<Writer> }
+type Handle = { getFile(): Promise<{ size: number }>; createWritable(options: { mode: 'exclusive' }): Promise<Writer> }
 export type SavePicker = (options: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<Handle>
 
 export async function saveBook(url: string, title: string, picker: SavePicker, fetcher: typeof fetch = fetch): Promise<'saved' | 'cancelled'> {
@@ -20,9 +20,13 @@ export async function saveBook(url: string, title: string, picker: SavePicker, f
   // Check again after the download: another application may have filled it.
   // The native API still cannot guarantee an atomic no-replace operation.
   if ((await handle.getFile()).size > 0) throw new Error('Choose a new filename. An existing book will not be replaced.')
-  const writer = await handle.createWritable()
+  const writer = await handle.createWritable({ mode: 'exclusive' })
   try {
+    if ((await handle.getFile()).size > 0) throw new Error('Choose a new filename. An existing book will not be replaced.')
     await writer.write(data)
+    // Staged bytes are not committed until close. Abort without deleting the
+    // destination if a separate writer filled it while our write was pending.
+    if ((await handle.getFile()).size > 0) throw new Error('Choose a new filename. An existing book will not be replaced.')
     await writer.close()
   } catch (error) {
     await writer.abort().catch(() => {})

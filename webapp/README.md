@@ -95,3 +95,14 @@ Physical readers and full EPUBCheck remain unverified.
 File retry regression: run `bash tests/file-retry-e2e.sh` from `webapp/ui/`,
 with `BASE` set to the target origin. `bun run dev` in `webapp/edge/` prepares
 static assets before serving the local Worker.
+
+## EPUB conformance and optional support
+
+See [reading proof](docs/reading-proof.md) for the full official EPUBCheck command,
+14 validated browser/CLI fixtures, safe retry checks and the physical reader
+handoff. Physical indexing/rendering remains unverified. Browser saves now request
+exclusive writer access and recheck before commit; native applications can still
+race the final check. No atomic no-replace guarantee is claimed.
+
+The browser includes an optional link to Hung's existing GitHub Sponsors page.
+Conversion stays free; no account, tracking, ads or payment code was added.

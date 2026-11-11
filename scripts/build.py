@@ -59,6 +59,11 @@ ATTRIBUTION_END = "<!-- t2e:attribution:end -->"
 UNKNOWN_CREATORS = "the original creators"
 
 
+def xml_text(value: str) -> str:
+    """Keep XML 1.0 text; preserve valid multilingual and astral characters."""
+    return re.sub(r"[^\x09\x0a\x0d\x20-\ud7ff\ue000-\ufffd\U00010000-\U0010ffff]", "", value)
+
+
 # ---------------------------------------------------------------------------
 # YouTube helpers
 # ---------------------------------------------------------------------------
@@ -604,6 +609,9 @@ def build_epub(
     css_path: str | None = None,
 ) -> str:
     """Run pandoc to build the EPUB. Returns the output path."""
+    title = xml_text(title).strip() or "Reading edition"
+    speakers = xml_text(speakers).strip() or UNKNOWN_CREATORS
+    source_url = xml_text(source_url or "")
     rights = build_rights(speakers, source_url)
 
     # Feed pandoc a copy with the attribution comment markers removed. The
@@ -613,7 +621,7 @@ def build_epub(
     # pandoc start a second level-1 section and re-emit the title, rendering it
     # twice. Stripping just the two marker lines collapses it to one clean
     # chapter (one title H1, then attribution, then the transcript).
-    src_md = Path(md_path).read_text(encoding="utf-8")
+    src_md = xml_text(Path(md_path).read_text(encoding="utf-8"))
     pandoc_md = "\n".join(
         line for line in src_md.split("\n")
         if line.strip() not in (ATTRIBUTION_START, ATTRIBUTION_END)
@@ -625,6 +633,8 @@ def build_epub(
     cmd = [
         "pandoc",
         tmp_md,
+        # Transcript and metadata angle brackets are prose, never raw XHTML.
+        "--from", "markdown-raw_html",
         "-o", output_path,
         "--metadata", f"title={title}",
         "--metadata", f"author={speakers}",
@@ -721,6 +731,15 @@ def main():
     else:
         print(f"Error: {args.input!r} is not an existing file or a recognizable YouTube URL.",
               file=sys.stderr)
+        sys.exit(1)
+
+    content = xml_text(content)
+    title = xml_text(title).strip() or "Reading edition"
+    speakers = xml_text(speakers or "")
+    source_url = xml_text(source_url or "")
+    body = clean_transcript(content)
+    if not body.strip():
+        print("Error: the source has no readable transcript text.", file=sys.stderr)
         sys.exit(1)
 
     # Creators credit for attribution/author metadata uses the full byline
