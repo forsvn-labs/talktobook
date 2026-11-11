@@ -40,7 +40,7 @@ export function BrowserApp(){
  <h2 className="font-display text-2xl">1. Bring your words</h2>
  <p className="mt-2 text-sm text-ink-2">For YouTube or X, paste the transcript or post text. Links are saved as credits; this free edition does not fetch them.</p>
  <label className="mt-5 block text-sm font-medium" htmlFor="source-file">Open a text file</label>
- <input id="source-file" className="mt-2 block w-full text-sm" type="file" accept=".md,.txt,.srt,.vtt" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(!file)return;setError('');void sourceReader.read(file)}}/>
+ <input id="source-file" className="mt-2 block w-full text-sm" type="file" accept=".md,.txt,.srt,.vtt" disabled={busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;setError('');void sourceReader.read(file)}}/>
  <label className="mt-5 block text-sm font-medium" htmlFor="source-text">Or paste your source</label>
  <Textarea id="source-text" className="mt-2 h-64 max-h-96 resize-y" style={{fieldSizing: 'fixed'}} rows={9} value={text} maxLength={2_000_000} disabled={busy} onChange={e=>{sourceReader.invalidate();setText(e.target.value)}} placeholder="Paste your Markdown, notes, or transcript…"/>
  <button type="button" className="mt-2 text-sm underline" disabled={busy} onClick={()=>{sourceReader.invalidate();setText(sample);setTitle('A little room to think');setAuthor('Talk to Book');setSource('');setOwns(true)}}>Try an original sample</button>

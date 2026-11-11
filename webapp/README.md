@@ -91,3 +91,7 @@ stale-read, cancellation, XML and download checks. Evidence stays in ignored
 `artifacts/`. Run `bun tests/conversion-benchmark.ts` for timing fixtures.
 The browser edition uses a simple vector cover and does not fetch videos.
 Physical readers and full EPUBCheck remain unverified.
+
+File retry regression: run `bash tests/file-retry-e2e.sh` from `webapp/ui/`,
+with `BASE` set to the target origin. `bun run dev` in `webapp/edge/` prepares
+static assets before serving the local Worker.

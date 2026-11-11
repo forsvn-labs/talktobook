@@ -8,7 +8,7 @@
   },
   "private": true,
   "scripts": {
-    "dev": "cf dev",
+    "dev": "bun scripts/build-static.ts && cf dev",
     "build": "cf build",
     "deploy": "cf deploy",
     "typecheck": "cf workers types && tsc"
