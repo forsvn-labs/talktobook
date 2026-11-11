@@ -80,3 +80,14 @@ force-add the generated PNG or SVG files.
 | GET | `/d/{id}/{name}` | File download |
 
 Copy `.env.example` to `.env` if you want to set `PUBLIC_URL` or job storage.
+
+## Free browser edition
+
+Use https://talktobook.forsvn.com for local-only text conversion to EPUB and
+Markdown. No source uploads, account, ads or paid services. In webapp/ui, run
+`bun install`, then `VITE_BROWSER_ONLY=true bun run dev --port 5199`.
+Run `bun test tests` and `bash tests/hardening-e2e.sh` for synthetic conversion,
+stale-read, cancellation, XML and download checks. Evidence stays in ignored
+`artifacts/`. Run `bun tests/conversion-benchmark.ts` for timing fixtures.
+The browser edition uses a simple vector cover and does not fetch videos.
+Physical readers and full EPUBCheck remain unverified.

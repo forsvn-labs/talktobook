@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict'
+import {mkdir,writeFile} from 'node:fs/promises'
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright')
+const browser=await chromium.launch({channel:'chrome'})
+const page=await browser.newPage({viewport:{width:390,height:844}})
+const errors=[];page.on('pageerror',e=>errors.push(e.message))
+const workers=[];page.on('worker',w=>workers.push(w.url()))
+try{
+ await page.goto(process.env.BASE||'http://127.0.0.1:5199')
+ assert.equal(workers.length,0,'book code is not loaded until requested')
+ await page.locator('#source-file').setInputFiles({name:'long.md',mimeType:'text/markdown',buffer:Buffer.from(('A paragraph for a larger reading edition.\n\n').repeat(25000))})
+ await page.getByRole('checkbox').check()
+ assert.ok((await page.locator('#source-text').boundingBox()).height<=400,'long documents keep a bounded text editor')
+ const client=await page.context().newCDPSession(page);await client.send('Emulation.setCPUThrottlingRate',{rate:4})
+ await page.evaluate(()=>{window.ticks=0;window.timer=setInterval(()=>window.ticks++,10)})
+ await page.getByRole('button',{name:'Generate book',exact:true}).click()
+ await page.getByRole('link',{name:'Download EPUB',exact:true}).waitFor()
+ const ticks=await page.evaluate(()=>{clearInterval(window.timer);return window.ticks})
+ assert.ok(ticks>0,'UI continues processing while conversion runs')
+ assert.equal(workers.length,1)
+ assert.equal(await page.locator('aside').evaluate(e=>e===document.activeElement),true,'mobile result receives focus')
+ // A deterministic stalled worker proves cancellation independently of machine speed.
+ await page.route('**/*book.worker*',r=>r.fulfill({contentType:'text/javascript',body:'self.onmessage=()=>{}'}))
+ await page.getByRole('button',{name:'Generate book',exact:true}).click()
+ await page.getByRole('button',{name:'Cancel generation'}).click()
+ await page.getByRole('alert').filter({hasText:'cancelled'}).waitFor()
+ assert.equal(await page.getByRole('button',{name:'Generate book',exact:true}).isEnabled(),true)
+ assert.deepEqual(errors,[])
+ await mkdir('artifacts/responsiveness',{recursive:true});await writeFile('artifacts/responsiveness/results.json',JSON.stringify({passed:true,characters:1_050_000,cpuSlowdown:4,uiTicksDuringConversion:ticks,workers,errors},null,2))
+ console.log('Large source, worker, mobile focus and cancellation passed')
+}finally{await browser.close()}
