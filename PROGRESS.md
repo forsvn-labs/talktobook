@@ -8,9 +8,29 @@ is recorded below. The local Python service is not publicly hosted.
 
 Next action: Verify live transcript fetching with an authorized source. Assignee is not recorded.
 
-## In progress
+## Shipped
 
-- **EPUB conformance and voluntary support** (2026-11-11): focused changes are ready for release. Official EPUBCheck passes 14 browser/CLI fixtures. Empty CLI sources preserve prior files. Save conflict checks and an optional GitHub Sponsors link are covered by regression tests. No physical reader is mounted; rendering/indexing still needs a device and copy approval.
+- **Validated EPUBs and optional support** (2026-11-11): the live browser includes
+  a voluntary GitHub Sponsors link. Conversion stays free. EPUB metadata and
+  literal text are valid XML; empty CLI sources preserve prior outputs. Browser
+  saves reject more conflicts before commit.
+
+<details><summary>Release evidence</summary>
+
+[PR #8](https://github.com/forsvn-labs/talktobook/pull/8), head `97bd679`, merged
+as `6601307`. Static Worker version `c5d2b157-c29d-416e-a882-eb6771f96cc0`
+passed live hardening, same-file retry and support checks. Two live EPUB downloads
+pass official EPUBCheck 5.4.0. All 14 browser/CLI fixtures pass again from this
+public tree with zero errors or warnings. Public Python: 34 tests; browser: 38;
+lint/types/build pass. The independent Python/API security changes are preserved.
+Before/after Cap images are attached to the PR. No tracker, ad or payment SDK.
+
+Physical reader rendering/indexing remains unverified: no reader was mounted.
+No device copy ran. Native applications can race the final save close; the API
+has no atomic no-replace. See [reading proof](webapp/docs/reading-proof.md) for
+repeatable checks, validated fixture paths and the copy-authorization handoff.
+
+</details>
 
 ## Current state
 

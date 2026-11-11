@@ -1,5 +1,16 @@
 # TalkToBook changelog
 
+## 2026-11-11 — Validated editions and optional support
+
+- Shipped the free browser support link to the owner's existing GitHub Sponsors.
+- Fixed malformed XML from metadata/source text and protected prior CLI outputs
+  from empty-input replacement. Browser saves request exclusive access and
+  recheck conflicts before commit.
+- Public source PR #8 merged as `6601307`; live static version
+  `c5d2b157-c29d-416e-a882-eb6771f96cc0` passed acceptance. Official EPUBCheck
+  passes 14 synthetic editions and two live downloads. Physical proof remains open.
+
+
 ## 2026-11-11
 
 - The free browser converter is live at https://talktobook.forsvn.com. It
