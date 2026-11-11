@@ -84,3 +84,16 @@ test('Unicode line separators cannot reintroduce quadratic prefix scans', () => 
  expect(cleanSource('\u2028'.repeat(100_000)+'End')).toBe('End')
  expect(performance.now()-start).toBeLessThan(500)
 })
+
+// Failure modes: required titles become empty after XML filtering; invalid-only
+// sources yield a blank reading edition; astral letters must remain intact.
+test('required metadata has a fallback after XML filtering', () => {
+ const book=makeBook({title:'\u0000\ufffe',author:'\uffff',text:'Valid prose 😀'})
+ expect(book.title).toBe('Reading edition')
+ expect(strFromU8(unzipSync(book.bytes)['OEBPS/content.opf'])).toContain('<dc:title>Reading edition</dc:title>')
+ expect(book.markdown).toContain('Source creator not specified')
+})
+test('invalid-only source is rejected before packaging; valid neighbor survives', () => {
+ expect(()=>makeBook({title:'T',author:'A',text:'\u0000\ufffe\ud800'})).toThrow('Paste text')
+ expect(makeBook({title:'日本語 😀',author:'Tiếng Việt',text:'\u0000Hello 😀'}).markdown).toContain('Hello 😀')
+})

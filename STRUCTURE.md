@@ -95,3 +95,8 @@ The free static browser edition enters through `webapp/ui/src/browser-main.tsx`.
 `webapp/ui/src/lib/browser-book.ts` packages EPUB and Markdown locally.
 `webapp/edge/` builds and deploys only static public assets.
 Browser checks: `webapp/ui/tests/hardening-e2e.sh`.
+
+See [reading proof](webapp/docs/reading-proof.md) for the full validator command
+and physical handoff. `webapp/ui/tests/run-epubcheck.sh` validates synthetic
+browser and CLI outputs; `webapp/tests/epubcheck_cli.py` builds CLI fixtures.
+`webapp/ui/src/components/support.tsx` owns the optional owner support link.

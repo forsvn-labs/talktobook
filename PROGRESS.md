@@ -8,6 +8,10 @@ is recorded below. The local Python service is not publicly hosted.
 
 Next action: Verify live transcript fetching with an authorized source. Assignee is not recorded.
 
+## In progress
+
+- **EPUB conformance and voluntary support** (2026-11-11): focused changes are ready for release. Official EPUBCheck passes 14 browser/CLI fixtures. Empty CLI sources preserve prior files. Save conflict checks and an optional GitHub Sponsors link are covered by regression tests. No physical reader is mounted; rendering/indexing still needs a device and copy approval.
+
 ## Current state
 
 | State | Item | Evidence | Date |

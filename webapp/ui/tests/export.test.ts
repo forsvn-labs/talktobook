@@ -37,3 +37,33 @@ test('refuses a destination filled while the download was pending', async () => 
  await expect(saveBook('/book','Title',async()=>handle,async()=>{size=10;return new Response('book')})).rejects.toThrow('existing')
  expect(opened).toBe(false)
 })
+
+// Independent handles share a simulated native file. Barriers force writes by
+// another context after preflight, before close. No real/device files are used.
+for (const stage of ['open','write'] as const) test(`replacement during ${stage} is preserved and retry uses a new file`, async()=>{
+ let disk=''; let aborted=false; let commits=0
+ const entered=Promise.withResolvers<void>(); const resume=Promise.withResolvers<void>()
+ const handle={getFile:async()=>({size:disk.length}),createWritable:async()=>{
+  if(stage==='open'){entered.resolve();await resume.promise}
+  return {write:async()=>{if(stage==='write'){entered.resolve();await resume.promise}},close:async()=>{disk='our book';commits++},abort:async()=>{aborted=true}}
+ }}
+ const result=saveBook('/book','T',async()=>handle,async()=>new Response('book'))
+ await entered.promise
+ // A separate writer owns this change, so abort must not delete it.
+ disk='OTHER WRITER';resume.resolve()
+ await expect(result).rejects.toThrow('existing')
+ expect(disk).toBe('OTHER WRITER');expect(commits).toBe(0);expect(aborted).toBe(true)
+ disk='';expect(await saveBook('/book','T',async()=>handle,async()=>new Response('book'))).toBe('saved')
+ expect(commits).toBe(1)
+})
+test('native writers request exclusive access; lock failure never writes', async()=>{
+ let requested: unknown
+ const handle={getFile:async()=>({size:0}),createWritable:async(options?:unknown)=>{requested=options;throw new DOMException('Busy','NoModificationAllowedError')}}
+ await expect(saveBook('/book','T',async()=>handle,async()=>new Response('book'))).rejects.toThrow('Busy')
+ expect(requested).toEqual({mode:'exclusive'})
+})
+test('empty download never opens writer',async()=>{
+ let opened=false
+ await expect(saveBook('/book','T',async()=>({getFile:async()=>({size:0}),createWritable:async()=>{opened=true;throw Error('opened')}}),async()=>new Response(''))).rejects.toThrow('empty')
+ expect(opened).toBe(false)
+})
