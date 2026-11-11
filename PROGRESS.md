@@ -15,7 +15,11 @@ Next action: Verify live transcript fetching with an authorized source. Assignee
   literal text are valid XML; empty CLI sources preserve prior outputs. Browser
   saves reject more conflicts before commit.
 
-<details><summary>Release evidence</summary>
+<details><summary>Technical details</summary>
+
+| Item | Evidence |
+| --- | --- |
+| Validated EPUBs and optional support | Live at https://talktobook.forsvn.com; verified static deployment `c5d2b157-c29d-416e-a882-eb6771f96cc0`, 2026-11-11; EPUBCheck and isolated acceptance passed |
 
 [PR #8](https://github.com/forsvn-labs/talktobook/pull/8), head `97bd679`, merged
 as `6601307`. Static Worker version `c5d2b157-c29d-416e-a882-eb6771f96cc0`
