@@ -1,9 +1,10 @@
 # Progress
 
-Updated: 2026-10-23 · Stage: building · Health: At risk
+Updated: 2026-11-11 · Stage: partly live · Health: On track
 
-The public product source is built. A hosted deployment is unverified.
-No separate active implementation is recorded beyond the acceptance gaps below.
+The free static browser converter is live at https://talktobook.forsvn.com.
+This source update adds its browser-only build and hardening; release verification
+is recorded below. The local Python service is not publicly hosted.
 
 Next action: Verify live transcript fetching with an authorized source. Assignee is not recorded.
 
@@ -21,6 +22,16 @@ Next action: Verify live transcript fetching with an authorized source. Assignee
 - Verify physical devices and realistic load before extending capability or performance claims.
 - Preserve creator attribution in Markdown and EPUB. Use synthetic transcripts or authored demo samples in tests.
 - Keep environment files, user transcripts, generated books, job state, and credentials out of Git.
+
+## 2026-11-11
+
+- **Browser source release**: added local-only EPUB/Markdown generation, a
+  cancellable worker, stale-read rejection, bounded blank-line cleanup and
+  Unicode-safe EPUB XML. The local Python/API code is preserved.
+- 31 browser unit tests, lint, both UI builds, edge types/build and live
+  isolated-browser acceptance pass. Live checks cover 1.72M characters, both
+  outputs, stale reads, cancellation/retry, escaped malicious text and XML.
+  Native filesystem races, physical readers and full EPUBCheck remain limits.
 
 ## 2026-11-01
 

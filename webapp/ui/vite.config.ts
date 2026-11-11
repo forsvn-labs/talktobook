@@ -6,7 +6,13 @@ import tailwindcss from "@tailwindcss/vite"
 const API = process.env.TALKTOBOOK_API ?? "http://127.0.0.1:8000"
 
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  plugins: [tailwindcss(), react(), {
+    name: "browser-only-entry",
+    transformIndexHtml: { order: "pre", handler(html) {
+      return process.env.VITE_BROWSER_ONLY === "true"
+        ? html.replace('/src/main.tsx', '/src/browser-main.tsx') : html
+    } },
+  }],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),

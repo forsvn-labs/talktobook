@@ -9,3 +9,8 @@ __pycache__/
 venv/
 ui/node_modules/
 ui/dist/
+
+# Recreated by scripts/gen-social-assets.py
+static/apple-touch-icon.png
+static/favicon.svg
+static/og.png

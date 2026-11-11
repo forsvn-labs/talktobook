@@ -87,3 +87,11 @@ private account details remain there. New knowledge follows
 - [PROGRESS.md](PROGRESS.md): source history, current state, and acceptance gaps.
 - [webapp/DEPLOY.md](webapp/DEPLOY.md): local container build and generated assets.
 - [brand/BRAND.md](brand/BRAND.md): public brand guidance.
+
+The free static browser edition enters through `webapp/ui/src/browser-main.tsx`.
+`webapp/ui/src/BrowserApp.tsx` owns the converter, and
+`webapp/ui/src/lib/source-reader.ts` rejects stale file completions.
+`webapp/ui/src/lib/book-worker.ts` owns cancellation and
+`webapp/ui/src/lib/browser-book.ts` packages EPUB and Markdown locally.
+`webapp/edge/` builds and deploys only static public assets.
+Browser checks: `webapp/ui/tests/hardening-e2e.sh`.
